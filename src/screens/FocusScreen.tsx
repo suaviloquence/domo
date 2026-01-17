@@ -92,7 +92,7 @@ function usePersistentCountdown(initialSeconds: number, isRunning: boolean) {
 }
 
 export default function FocusScreen({ navigation, route }: any) {
-  const { selectedPetId, addJournalEntry } = usePet();
+  const { selectedPetId } = usePet();
 
   // Get MM:SS and goal from route params
   const initialSeconds =
@@ -141,18 +141,6 @@ export default function FocusScreen({ navigation, route }: any) {
     setShowRateModal(false);
   };
 
-  // Handle rating modal completion
-  const handleRateSession = (stars: number) => {
-    // Save journal entry
-    addJournalEntry({
-      start: sessionStart,
-      duration: initialSeconds,
-      goal,
-      rating: stars,
-    });
-    setShowRateModal(false);
-    navigation.goBack();
-  };
 
   return (
     <View style={styles.container}>
@@ -198,16 +186,6 @@ export default function FocusScreen({ navigation, route }: any) {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Rate Session Modal */}
-      <RateSessionModal
-        visible={showRateModal}
-        onRate={handleRateSession}
-        onCancel={() => {
-          setShowRateModal(false);
-          navigation.goBack();
-        }}
-      />
     </View>
   );
 }
