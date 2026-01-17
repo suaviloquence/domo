@@ -1,33 +1,47 @@
-import React from "react";
-import { StatusBar } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from 'react';
+import { StatusBar } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import HomeScreen from "./src/screens/HomeScreen";
-import SplashScreen from "./src/screens/SplashScreen";
-import PickPetScreen from "./src/screens/PickPetScreen";
+import HomeScreen from './src/screens/HomeScreen';
+import SplashScreen from './src/screens/SplashScreen';
+import PickPetScreen from './src/screens/PickPetScreen';
 
-import { PetProvider, usePet } from "./src/context/PetContext";
-import FocusScreen from "./src/screens/FocusScreen";
+import { PetProvider, usePet } from './src/context/PetContext';
+import FocusScreen from './src/screens/FocusScreen';
 
-import ShopScreen from "./src/screens/ShopScreen";
+import ShopScreen from './src/screens/ShopScreen';
 
-
-
+import { useEffect } from 'react';
+import { Notifications } from 'react-native-notifications';
 
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
   const { selectedPetId, isReady } = usePet();
 
+  useEffect(() => {
+    Notifications.registerRemoteNotifications(); // required even for local
+
+    Notifications.events().registerRemoteNotificationsRegistered(event => {
+      console.log('Device registered for notifications', event.deviceToken);
+    });
+
+    Notifications.events().registerRemoteNotificationsRegistrationFailed(
+      event => {
+        console.log('Failed to register notifications', event);
+      },
+    );
+  }, []);
+
   if (!isReady) return <SplashScreen />;
 
-  // debugging brooo kmss... 
+  // debugging brooo kmss...
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName={selectedPetId ? "Home" : "PickPet"}
-      key={selectedPetId ? "app" : "onboarding"}
+      initialRouteName={selectedPetId ? 'Home' : 'PickPet'}
+      key={selectedPetId ? 'app' : 'onboarding'}
     >
       <Stack.Screen name="PickPet" component={PickPetScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
@@ -35,7 +49,6 @@ function RootNavigator() {
       <Stack.Screen name="Shop" component={ShopScreen} />
     </Stack.Navigator>
   );
-  
 }
 
 export default function App() {

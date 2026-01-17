@@ -10,6 +10,7 @@ import {
 import PetDisplay from '../components/PetDisplay';
 import { usePet } from '../context/PetContext';
 import RateSessionModal from '../components/RateSessionModal';
+import { useFocusGuard } from '../useFocusGuard';
 
 // Helper to format MM:SS
 function formatTime(totalSeconds: number) {
@@ -92,7 +93,7 @@ function usePersistentCountdown(initialSeconds: number, isRunning: boolean) {
 }
 
 export default function FocusScreen({ navigation, route }: any) {
-  const { selectedPetId, addJournalEntry } = usePet();
+  const { selectedPetId, addCoins } = usePet();
 
   // Get MM:SS and goal from route params
   const initialSeconds =
@@ -112,6 +113,14 @@ export default function FocusScreen({ navigation, route }: any) {
   // Countdown hook
   const { secondsLeft, reset, setSecondsLeft, setStartTimestamp } =
     usePersistentCountdown(initialSeconds, isRunning && !isDone);
+
+  useFocusGuard({
+    enabled: true,
+    delaySeconds: 10,
+    onDistraction: () => {
+      addCoins(-20);
+    },
+  });
 
   // Watch for timer completion
   useEffect(() => {
