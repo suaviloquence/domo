@@ -13,26 +13,31 @@ import { usePet, PetId } from "../context/PetContext";
 
 const { width } = Dimensions.get("window");
 
-const pets = [
+const pets: ReadonlyArray<{
+  id: PetId;
+  name: string;
+  desc: string;
+  img: any;
+}> = [
   {
-    id: "pet1",
-    name: "Koala",
+    id: "Strawb",
+    name: "Strawb",
     desc: "Chill and sleepy\nLoves long sessions",
-    img: require("../assets/koala.gif"),
+    img: require("../assets/STRAWB.png"),
   },
   {
-    id: "pet2",
-    name: "Bear",
+    id: "Rugy",
+    name: "Rugy",
     desc: "Gentle and grounding\nYour steady companion",
-    img: require("../assets/bear.gif"),
+    img: require("../assets/RUGY.png"),
   },
   {
-    id: "pet3",
-    name: "Hamster",
+    id: "Ceviche",
+    name: "Ceviche",
     desc: "Quick bursts of energy\nPerfect for sprints",
-    img: require("../assets/hamster.gif"),
+    img: require("../assets/CEVICHE.png"),
   },
-] as const;
+];
 
 export default function PickPetScreen({ navigation }: any) {
   const { choosePet } = usePet();
@@ -42,7 +47,7 @@ export default function PickPetScreen({ navigation }: any) {
   const selectedPet = pets[index];
 
   const onContinue = async () => {
-    await choosePet(selectedPet.id as PetId);
+    await choosePet(selectedPet.id); // ✅ no casting needed
     navigation.replace("Home");
   };
 
@@ -50,9 +55,7 @@ export default function PickPetScreen({ navigation }: any) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Text style={styles.title}>Choose Your Pal</Text>
-        <Text style={styles.subtitle}>
-          They&apos;ll grow with every focus session
-        </Text>
+        <Text style={styles.subtitle}>They&apos;ll grow with every focus session</Text>
 
         <FlatList
           ref={flatRef}
@@ -77,13 +80,7 @@ export default function PickPetScreen({ navigation }: any) {
         {/* Dots */}
         <View style={styles.dots}>
           {pets.map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === index && styles.dotActive,
-              ]}
-            />
+            <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
         </View>
 
@@ -113,6 +110,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "800",
     color: GREEN,
+    paddingTop: 48,
   },
   subtitle: {
     marginTop: 6,
@@ -123,11 +121,11 @@ const styles = StyleSheet.create({
   card: {
     width,
     alignItems: "center",
-    paddingTop: 30,
+    paddingTop: 40,
   },
   img: {
-    width: 220,
-    height: 220,
+    width: 288,
+    height: 288,
     resizeMode: "contain",
   },
   name: {
@@ -135,7 +133,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "800",
     color: GREEN,
-    textTransform: "capitalize",
   },
   desc: {
     marginTop: 10,

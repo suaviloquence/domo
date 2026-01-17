@@ -1,48 +1,49 @@
-import React from 'react';
-import {
-  Image,
-  Text,
-  StyleSheet,
-  View,
-  ImageStyle,
-  TextStyle,
-} from 'react-native';
+import React from "react";
+import { Image, Text, StyleSheet, ImageStyle, TextStyle } from "react-native";
+import { PetId, usePet } from "../context/PetContext";
 
-export const petImages: Record<string, any> = {
-  Rugy: require('../assets/RUGY.png'),
-  Strawb: require('../assets/STRAWB.png'),
-  Ceviche: require('../assets/CEVICHE.png'),
+const PET_IMAGES: Record<PetId, any> = {
+  Rugy: require("../assets/RUGY.png"),
+  Strawb: require("../assets/STRAWB.png"),
+  Ceviche: require("../assets/CEVICHE.png"),
 };
 
 type PetDisplayProps = {
-  selectedPetId?: string | null;
+  // Optional: if not provided, we’ll use context
+  selectedPetId?: PetId | null;
+  size?: number;
   imageStyle?: ImageStyle;
   emojiStyle?: TextStyle;
 };
 
 export default function PetDisplay({
   selectedPetId,
+  size = 256,
   imageStyle,
   emojiStyle,
 }: PetDisplayProps) {
-  if (selectedPetId && petImages[selectedPetId]) {
+  const ctx = usePet();
+  const petId = selectedPetId ?? ctx.selectedPetId;
+
+  if (petId) {
     return (
       <Image
-        source={petImages[selectedPetId]}
-        style={[styles.petImage, imageStyle]}
+        source={PET_IMAGES[petId]}
+        style={[styles.petImage, { width: size, height: size }, imageStyle]}
+        resizeMode="contain"
         accessibilityLabel="Your pet"
       />
     );
   }
-  // fallback emoji if no pet selected
+
   return (
-    <Text style={[styles.pet, emojiStyle]} accessibilityLabel="Egg pet">
+    <Text style={[styles.petEmoji, emojiStyle]} accessibilityLabel="Egg pet">
       🐣
     </Text>
   );
 }
 
 const styles = StyleSheet.create({
-  pet: { fontSize: 64 },
+  petEmoji: { fontSize: 64 },
   petImage: { width: 256, height: 256 },
 });
