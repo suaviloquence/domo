@@ -8,17 +8,28 @@ const pets = [
   { id: "pet3", name: "joebama", img: require("../assets/hamster.gif") },
 ] as const;
 
-export default function PickPetScreen() {
+export default function PickPetScreen({ navigation }: any) {
   const { choosePet } = usePet();
 
   return (
+    
     <View style={styles.container}>
       <Text style={styles.title}>Pick your pet</Text>
       <Text style={styles.sub}>This will be your focus buddy 🧃</Text>
 
       <View style={styles.row}>
         {pets.map((p) => (
-          <Pressable key={p.id} style={styles.card} onPress={() => choosePet(p.id)}>
+          <Pressable
+          key={p.id}
+          style={styles.card}
+          hitSlop={10}
+          onPress={async () => {
+            console.log("picked:", p.id);
+            await choosePet(p.id);
+            navigation.replace("Home");
+          }}
+        >
+        
             <Image source={p.img} style={styles.img} />
             <Text style={styles.name}>{p.name}</Text>
           </Pressable>

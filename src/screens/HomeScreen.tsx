@@ -9,12 +9,12 @@ const petImages: Record<string, any> = {
 };
 
 
-export default function HomeScreen() {
-  const { selectedPetId, resetPet} = usePet();      // adding this so we can reset the pets
+export default function HomeScreen({ navigation }: any) {
+  const { selectedPetId, resetPet, coins, streak, addCoins } = usePet();      // adding this so we can reset the pets
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>focus monster big 🌱</Text>
+      <Text style={styles.title}>focus pal</Text>
 
       <View style={styles.card}>
         {selectedPetId ? (
@@ -25,10 +25,21 @@ export default function HomeScreen() {
         <Text style={styles.caption}>your pet grows when you lock in</Text>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => {}}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("Focus", { seconds: 10 * 60 })} // demo
+      >
         <Text style={styles.buttonText}>start focus session</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[styles.button, { backgroundColor: "#3C5A49" }]}
+        onPress={() => navigation.navigate("Shop")}
+      >
+        <Text style={styles.buttonText}>closet</Text>
       </TouchableOpacity>
 
+      
       {__DEV__ && (             // RESET BUTTON
         <TouchableOpacity
          style={[styles.button, { backgroundColor: "#999", marginTop: 12 }]} 
@@ -38,7 +49,19 @@ export default function HomeScreen() {
 )}
 
 
-      <Text style={styles.footer}>coins: 0 • streak: 0</Text>
+{__DEV__ && ( // COINS 
+  <TouchableOpacity
+    style={[styles.button, { backgroundColor: "#3C5A49" }]}
+    onPress={() => addCoins(50)}
+  >
+    <Text style={styles.buttonText}>dev: +50 coins</Text>
+  </TouchableOpacity>
+)}
+
+
+
+    <Text style={styles.footer}>coins: {coins} • streak: {streak}</Text>
+
     </View>
   );
 }
