@@ -12,6 +12,42 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        {/* Left: Journal */}
+        <TouchableOpacity
+          style={styles.topBarButton}
+          onPress={() => navigation.navigate('Journal')}
+        >
+          <Text style={styles.topBarIcon}>📓</Text>
+        </TouchableOpacity>
+
+        {/* Middle: Hunger + Streak + Coins */}
+        <View style={styles.centerStatus}>
+          {/* Hunger */}
+          <View style={styles.statusRow}>
+            <Text style={styles.statusIcon}>🍖</Text>
+            <View style={styles.hungerContainer}>
+              <View style={[styles.hungerFill, { width: '70%' }]} />
+            </View>
+          </View>
+
+          {/* Streak + Coins */}
+          <View style={styles.statusRow}>
+            <Text style={styles.statusText}>🔥 {streak}</Text>
+            <Text style={styles.statusDivider}>•</Text>
+            <Text style={styles.statusText}>🪙 {coins}</Text>
+          </View>
+        </View>
+
+        {/* Right: Hibernate */}
+        <TouchableOpacity
+          style={styles.topBarButton}
+          onPress={() => navigation.navigate('Hibernate')}
+        >
+          <Text style={styles.topBarIcon}>💤</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.title}>focus pal</Text>
 
       <View style={styles.card}>
@@ -115,5 +151,63 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7D73',
     marginTop: 8,
+  },
+  topBar: {
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  topBarButton: {
+    padding: 8,
+  },
+
+  topBarIcon: {
+    fontSize: 22,
+  },
+
+  centerStatus: {
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  statusIcon: {
+    fontSize: 14,
+  },
+
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#3C5A49',
+  },
+
+  statusDivider: {
+    fontSize: 13,
+    color: '#6B7D73',
+  },
+
+  hungerContainer: {
+    width: 80,
+    height: 8,
+    backgroundColor: '#DCE8E1',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+
+  hungerFill: {
+    height: '100%',
+    backgroundColor: '#6FAF8A',
+    borderRadius: 999,
   },
 });
