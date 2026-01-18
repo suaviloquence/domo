@@ -4,6 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type PetId = 'Rugy' | 'Strawb' | 'Ceviche';
 export type AccessoryId = 'none' | 'hat' | 'shoe';
 
+export type JournalEntry = {
+  id: string;
+  startTime: number; // timestamp in milliseconds
+  duration: number; // duration in seconds
+  goal: string;
+  stars: number; // 1-5
+  reflection?: string; // optional reflection message
+};
+
 type PetContextType = {
   selectedPetId: PetId | null;
   isReady: boolean;
@@ -17,6 +26,16 @@ type PetContextType = {
   buyAccessory: (id: AccessoryId, price: number) => Promise<boolean>;
   equipAccessory: (id: AccessoryId) => Promise<void>;
   addCoins: (amount: number) => Promise<void>;
+  totalFocusSeconds: number;
+  setTotalFocusSeconds: (seconds: number) => Promise<void>;
+  food: number;
+  setFood: (amount: number) => Promise<void>;
+  coinsEarnedFromFocus: number;
+  setCoinsEarnedFromFocus: (amount: number) => Promise<void>;
+  foodEarnedFromFocus: number;
+  setFoodEarnedFromFocus: (amount: number) => Promise<void>;
+  addJournalEntry: (entry: Omit<JournalEntry, 'id'>) => Promise<void>;
+  getJournalEntries: () => Promise<JournalEntry[]>;
 };
 
 const PetContext = createContext<PetContextType | null>(null);
@@ -26,11 +45,17 @@ const STREAK_KEY = 'streak';
 const LAST_DONE_KEY = 'lastFocusDate';
 const OWNED_KEY = 'ownedAccessories';
 const EQUIPPED_KEY = 'equippedAccessory';
+const JOURNAL_KEY = 'journalEntries';
 
 export function PetProvider({ children }: { children: React.ReactNode }) {
   const [selectedPetId, setSelectedPetId] = useState<PetId | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [coins, setCoins] = useState<number>(0);
+  const [food, setFood] = useState<number>(0);
+  const [totalFocusSeconds, setTotalFocusSeconds] = useState<number>(0);
+  const [coinsEarnedFromFocus, setCoinsEarnedFromFocus] = useState<number>(0);
+  const [foodEarnedFromFocus, setFoodEarnedFromFocus] = useState<number>(0);
+
   const [streak, setStreak] = useState<number>(0);
   const [lastFocusDate, setLastFocusDate] = useState<string | null>(null);
   const [ownedAccessories, setOwnedAccessories] = useState<AccessoryId[]>([
@@ -124,6 +149,26 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
     setCoins(newCoins);
   };
 
+  const addJournalEntry = async (entry: Omit<JournalEntry, 'id'>) => {
+    const journalEntry: JournalEntry = {
+      ...entry,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    };
+    const existingEntries = await getJournalEntries();
+    const updatedEntries = [journalEntry, ...existingEntries];
+    await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updatedEntries));
+  };
+
+  const getJournalEntries = async (): Promise<JournalEntry[]> => {
+    const saved = await AsyncStorage.getItem(JOURNAL_KEY);
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved) as JournalEntry[];
+    } catch {
+      return [];
+    }
+  };
+
   return (
     <PetContext.Provider
       value={{
@@ -139,6 +184,16 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
         buyAccessory,
         equipAccessory,
         addCoins,
+        food,
+        foodEarnedFromFocus,
+        coinsEarnedFromFocus,
+        totalFocusSeconds,
+        setTotalFocusSeconds,
+        setFood,
+        setCoinsEarnedFromFocus,
+        setFoodEarnedFromFocus,
+        addJournalEntry,
+        getJournalEntries,
       }}
     >
       {children}

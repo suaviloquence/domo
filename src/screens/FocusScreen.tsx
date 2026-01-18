@@ -1,15 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   AppState,
-  Modal,
 } from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import PetDisplay from '../components/PetDisplay';
 import { usePet } from '../context/PetContext';
-import RateSessionModal from '../components/RateSessionModal';
+import { useNavigation } from '@react-navigation/native';
 
 // Helper to format MM:SS
 function formatTime(totalSeconds: number) {
@@ -26,15 +26,12 @@ function usePersistentCountdown(initialSeconds: number, isRunning: boolean) {
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
 
-  // Start timer
   useEffect(() => {
     if (isRunning && startTimestamp === null) {
       setStartTimestamp(Date.now());
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRunning]);
+  }, [isRunning, startTimestamp]);
 
-  // Listen for app state changes to update timer
   useEffect(() => {
     const handleAppStateChange = () => {
       if (isRunning && startTimestamp !== null) {
@@ -42,20 +39,13 @@ function usePersistentCountdown(initialSeconds: number, isRunning: boolean) {
         setSecondsLeft(Math.max(initialSeconds - elapsed, 0));
       }
     };
-    AppState.addEventListener('change', handleAppStateChange);
-    return () => {
-      // Use AppState.removeEventListener only if available, otherwise use AppStateSubscription.remove()
-      // But in React Native >=0.65, addEventListener returns a subscription object with remove()
-      // So let's use that pattern for compatibility:
-      // @ts-ignore
-      if (typeof AppState.removeEventListener === 'function') {
-        // @ts-ignore
-        AppState.removeEventListener('change', handleAppStateChange);
-      }
-    };
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+    return () => subscription.remove();
   }, [isRunning, startTimestamp, initialSeconds]);
 
-  // Regular interval update
   useEffect(() => {
     if (!isRunning || secondsLeft <= 0) return;
     const interval = setInterval(() => {
@@ -67,21 +57,17 @@ function usePersistentCountdown(initialSeconds: number, isRunning: boolean) {
     return () => clearInterval(interval);
   }, [isRunning, startTimestamp, initialSeconds, secondsLeft]);
 
-  // Pause logic
   useEffect(() => {
     if (!isRunning && pausedAt === null && startTimestamp !== null) {
       setPausedAt(Date.now());
     }
     if (isRunning && pausedAt !== null && startTimestamp !== null) {
-      // Adjust startTimestamp by pause duration
       const pauseDuration = Date.now() - pausedAt;
       setStartTimestamp(startTimestamp + pauseDuration);
       setPausedAt(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
 
-  // Reset
   const reset = () => {
     setSecondsLeft(initialSeconds);
     setStartTimestamp(Date.now());
@@ -91,8 +77,9 @@ function usePersistentCountdown(initialSeconds: number, isRunning: boolean) {
   return { secondsLeft, reset, setSecondsLeft, setStartTimestamp };
 }
 
-export default function FocusScreen({ navigation, route }: any) {
+export default function FocusScreen({ route }: any) {
   const { selectedPetId } = usePet();
+  const navigation = useNavigation();
 
   // Get MM:SS and goal from route params
   const initialSeconds =
@@ -102,27 +89,37 @@ export default function FocusScreen({ navigation, route }: any) {
   // Timer state
   const [isRunning, setIsRunning] = useState(true);
   const [isDone, setIsDone] = useState(false);
-  const [showRateModal, setShowRateModal] = useState(false);
-
-  // Journal session info
-  const [sessionStart, setSessionStart] = useState<number>(Date.now());
-  const [sessionDuration, setSessionDuration] =
-    useState<number>(initialSeconds);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
 
   // Countdown hook
-  const { secondsLeft, reset, setSecondsLeft, setStartTimestamp } =
-    usePersistentCountdown(initialSeconds, isRunning && !isDone);
+  const { secondsLeft, reset, setStartTimestamp } = usePersistentCountdown(
+    initialSeconds,
+    isRunning && !isDone,
+  );
+
+  // Track start timestamp for journal
+
+  useEffect(() => {
+    if (isRunning && sessionStartTime === null) {
+      setSessionStartTime(Date.now());
+    }
+  }, [isRunning, sessionStartTime]);
 
   // Watch for timer completion
   useEffect(() => {
     if (secondsLeft <= 0 && !isDone) {
       setIsDone(true);
       setIsRunning(false);
-      setSessionDuration(initialSeconds);
-      setShowRateModal(true);
+
+      // Navigate to CompletionScreen
+      navigation.navigate('Completion', {
+        timeSpent: initialSeconds, // full session time
+        goal,
+        streakExtended: true, // replace with real streak logic
+        startTime: sessionStartTime || Date.now() - initialSeconds * 1000, // fallback to calculated time
+      });
     }
-    // eslint-disable-next-line
-  }, [secondsLeft, isDone]);
+  }, [secondsLeft, isDone, navigation, initialSeconds, goal, sessionStartTime]);
 
   // Pause/resume
   const handlePauseResume = () => setIsRunning(v => !v);
@@ -137,17 +134,19 @@ export default function FocusScreen({ navigation, route }: any) {
     reset();
     setIsRunning(true);
     setIsDone(false);
-    setSessionStart(Date.now());
-    setShowRateModal(false);
   };
-
 
   return (
     <View style={styles.container}>
       {/* Top: Timer and Goal */}
       <View style={styles.top}>
         <Text style={styles.timer}>{formatTime(secondsLeft)}</Text>
-        {goal ? <Text style={styles.goalText}>🎯 {goal}</Text> : null}
+        {goal ? (
+          <View style={styles.goalContainer}>
+            <MaterialIcons name="flag" size={16} color="#3C5A49" />
+            <Text style={styles.goalText}>{goal}</Text>
+          </View>
+        ) : null}
       </View>
 
       {/* Middle: Pet */}
@@ -177,19 +176,13 @@ export default function FocusScreen({ navigation, route }: any) {
               <Text style={styles.buttonText}>cancel</Text>
             </TouchableOpacity>
           </>
-        ) : (
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: '#6FAF8A' }]}
-            onPress={() => setShowRateModal(true)}
-          >
-            <Text style={styles.buttonText}>rate session</Text>
-          </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );
 }
 
+// styles remain the same as before
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -206,13 +199,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 8,
   },
+  goalContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    maxWidth: 300,
+  },
   goalText: {
     fontSize: 16,
     color: '#3C5A49',
-    marginTop: 10,
+    marginLeft: 6,
     textAlign: 'center',
     fontStyle: 'italic',
-    maxWidth: 300,
   },
   middle: {
     flex: 1,
@@ -221,7 +219,6 @@ const styles = StyleSheet.create({
   },
   bottom: {
     flexDirection: 'row',
-    gap: 12,
     marginBottom: 24,
     justifyContent: 'center',
   },

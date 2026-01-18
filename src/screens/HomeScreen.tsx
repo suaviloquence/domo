@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { usePet } from '../context/PetContext';
@@ -15,7 +16,7 @@ import PetDisplay from '../components/PetDisplay';
 const NAME_KEY = 'petName';
 
 export default function HomeScreen({ navigation }: any) {
-  const { selectedPetId, resetPet, coins, streak, addCoins } = usePet();
+  const { selectedPetId, resetPet, coins, streak, addCoins, food, setFood } = usePet();
 
   const [timerModalVisible, setTimerModalVisible] = useState(false);
 
@@ -37,6 +38,13 @@ export default function HomeScreen({ navigation }: any) {
     setIsEditingName(false);
   };
 
+  const handleFeed = async () => {
+    if (food > 0) {
+      await setFood(food - 1);
+      // You could add visual feedback here (animation, sound, etc.)
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -46,20 +54,23 @@ export default function HomeScreen({ navigation }: any) {
           style={styles.topBarButton}
           onPress={() => navigation.navigate('Journal')}
         >
-          <Text style={styles.topBarIcon}>📓</Text>
+          <MaterialIcons name="menu-book" size={22} color="#3C5A49" />
         </TouchableOpacity>
 
-        {/* Center: Hunger + Coins + Streak */}
+        {/* Center: Food + Coins + Streak */}
         <View style={styles.centerStatus}>
           <View style={styles.statusRowBig}>
-            <Text style={styles.statusIconBig}>🍖</Text>
-            <View style={styles.hungerContainer}>
-              <View style={[styles.hungerFill, { width: '70%' }]} />
+            <MaterialIcons name="restaurant" size={16} color="#3C5A49" />
+            <View style={styles.foodMeterContainer}>
+              <View style={[styles.foodMeterFill, { width: `${Math.min((food / 100) * 100, 100)}%` }]} />
             </View>
+            <Text style={styles.foodAmount}>{food}</Text>
 
-            <Text style={styles.statusTextBig}>🪙 {coins}</Text>
+            <MaterialIcons name="monetization-on" size={16} color="#3C5A49" style={styles.statusIconSpacing} />
+            <Text style={styles.statusTextBig}>{coins}</Text>
             <Text style={styles.statusDividerBig}>•</Text>
-            <Text style={styles.statusTextBig}>🔥 {streak}</Text>
+            <MaterialIcons name="local-fire-department" size={16} color="#FF6B35" style={styles.statusIconSpacing} />
+            <Text style={styles.statusTextBig}>{streak}</Text>
           </View>
         </View>
 
@@ -81,7 +92,7 @@ export default function HomeScreen({ navigation }: any) {
               onSubmitEditing={saveName}
             />
             <TouchableOpacity onPress={saveName} style={styles.editBtn}>
-              <Text style={styles.editIcon}>✅</Text>
+              <MaterialIcons name="check" size={16} color="#3C5A49" />
             </TouchableOpacity>
           </>
         ) : (
@@ -91,7 +102,7 @@ export default function HomeScreen({ navigation }: any) {
               onPress={() => setIsEditingName(true)}
               style={styles.editBtn}
             >
-              <Text style={styles.editIcon}>✏️</Text>
+              <MaterialIcons name="edit" size={16} color="#3C5A49" style={styles.editIconSpacing} />
             </TouchableOpacity>
           </>
         )}
@@ -102,6 +113,16 @@ export default function HomeScreen({ navigation }: any) {
         <PetDisplay selectedPetId={selectedPetId} size={220} />
         <Text style={styles.caption}>your pet grows when you lock in</Text>
       </View>
+
+      {/* Feed Button */}
+      <TouchableOpacity
+        style={[styles.feedButton, food === 0 && styles.feedButtonDisabled]}
+        onPress={handleFeed}
+        disabled={food === 0}
+      >
+        <MaterialIcons name="restaurant-menu" size={18} color="white" />
+        <Text style={styles.feedButtonText}>Feed Pet (1 food)</Text>
+      </TouchableOpacity>
 
       {/* Actions */}
       <TouchableOpacity
@@ -164,7 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    gap: 16,
   },
 
   /* Top bar */
@@ -179,7 +199,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   topBarButton: { padding: 8 },
-  topBarIcon: { fontSize: 22 },
 
   // keeps the center block centered since we removed the right button
   rightSpacer: { width: 22 + 16 }, // ~icon size + padding feel
@@ -192,34 +211,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
   },
-  statusIconBig: { fontSize: 16 },
   statusTextBig: {
     fontSize: 15,
     fontWeight: '700',
     color: '#3C5A49',
+    marginLeft: 4,
   },
-  statusDividerBig: { fontSize: 15, color: '#6B7D73' },
+  statusDividerBig: { 
+    fontSize: 15, 
+    color: '#6B7D73',
+    marginHorizontal: 4,
+  },
+  statusIconSpacing: {
+    marginLeft: 4,
+  },
 
-  hungerContainer: {
+  foodMeterContainer: {
     width: 90,
     height: 10,
     backgroundColor: '#DCE8E1',
     borderRadius: 999,
     overflow: 'hidden',
+    marginLeft: 4,
   },
-  hungerFill: {
+  foodMeterFill: {
     height: '100%',
     backgroundColor: '#6FAF8A',
     borderRadius: 999,
+  },
+  foodAmount: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#3C5A49',
+    marginLeft: 4,
+    minWidth: 30,
   },
 
   /* Title / name */
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
   },
   title: {
     fontSize: 28,
@@ -240,8 +272,11 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 999,
     backgroundColor: '#E7F3EC',
+    marginLeft: 10,
   },
-  editIcon: { fontSize: 16 },
+  editIconSpacing: {
+    marginLeft: 0,
+  },
 
   /* Card */
   card: {
@@ -251,7 +286,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 22,
     alignItems: 'center',
-    gap: 10,
   },
   caption: {
     fontSize: 14,
@@ -259,6 +293,28 @@ const styles = StyleSheet.create({
   },
 
   /* Buttons */
+  feedButton: {
+    backgroundColor: '#FF6B35',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  feedButtonDisabled: {
+    backgroundColor: '#CCC',
+    opacity: 0.6,
+  },
+  feedButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
   button: {
     backgroundColor: '#6FAF8A',
     paddingVertical: 14,
@@ -267,6 +323,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     alignItems: 'center',
+    marginBottom: 12,
   },
   buttonText: {
     color: 'white',

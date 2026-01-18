@@ -9,6 +9,7 @@ import {
   Image,
   ImageSourcePropType,
 } from "react-native";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { AccessoryId, usePet } from "../context/PetContext";
 
 type Item = {
@@ -113,7 +114,7 @@ export default function ShopScreen({ navigation }: any) {
 
           {!owned && !isSoon && (
             <View style={styles.lockBadge}>
-              <Text style={styles.lockText}>🔒</Text>
+              <MaterialIcons name="lock" size={12} color="rgba(0,0,0,0.6)" />
             </View>
           )}
         </View>
@@ -140,7 +141,7 @@ export default function ShopScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.headerRow}>
         <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
-          <Text style={styles.back}>←</Text>
+          <MaterialIcons name="arrow-back" size={22} color="#3C5A49" />
         </Pressable>
 
         <Text style={styles.title}>Closet</Text>
@@ -172,23 +173,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 14,
   },
-  back: { fontSize: 22, color: "#3C5A49" },
   title: { fontSize: 20, fontWeight: "800", color: "#2E3D35" },
 
   balancePill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
     backgroundColor: "#E7F3EC",
   },
-  coinIcon: { width: 18, height: 18, borderRadius: 9 },
+  coinIcon: { width: 18, height: 18, borderRadius: 9, marginRight: 6 },
   balanceText: { fontWeight: "900", color: "#3C5A49" },
 
-  row: { gap: 12 },
-  listContent: { gap: 12, paddingBottom: 12 },
+  row: { marginBottom: 12 },
+  listContent: { paddingBottom: 12 },
 
   card: {
     flex: 1,
@@ -236,7 +235,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  lockText: { fontSize: 12 },
 
   itemName: { fontSize: 15, fontWeight: "800", color: "#2E3D35", marginTop: 6 },
   metaText: { fontSize: 12, color: "#3C5A49", opacity: 0.9, marginTop: 4 },

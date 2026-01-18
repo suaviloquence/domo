@@ -1,5 +1,6 @@
 import React from "react";
-import { Image, Text, StyleSheet, ImageStyle, TextStyle } from "react-native";
+import { Image, View, StyleSheet, ImageStyle } from "react-native";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { PetId, usePet } from "../context/PetContext";
 
 const PET_IMAGES: Record<PetId, any> = {
@@ -9,18 +10,16 @@ const PET_IMAGES: Record<PetId, any> = {
 };
 
 type PetDisplayProps = {
-  // Optional: if not provided, we’ll use context
+  // Optional: if not provided, we'll use context
   selectedPetId?: PetId | null;
   size?: number;
   imageStyle?: ImageStyle;
-  emojiStyle?: TextStyle;
 };
 
 export default function PetDisplay({
   selectedPetId,
   size = 256,
   imageStyle,
-  emojiStyle,
 }: PetDisplayProps) {
   const ctx = usePet();
   const petId = selectedPetId ?? ctx.selectedPetId;
@@ -37,13 +36,16 @@ export default function PetDisplay({
   }
 
   return (
-    <Text style={[styles.petEmoji, emojiStyle]} accessibilityLabel="Egg pet">
-      🐣
-    </Text>
+    <View style={styles.petIconContainer} accessibilityLabel="Egg pet">
+      <MaterialIcons name="egg" size={64} color="#3C5A49" />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  petEmoji: { fontSize: 64 },
+  petIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   petImage: { width: 256, height: 256 },
 });
