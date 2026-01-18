@@ -1,33 +1,34 @@
-import React from "react";
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Pressable,
+  TouchableOpacity,
   FlatList,
   Alert,
   Image,
-} from "react-native";
-import { usePet } from "../context/PetContext";
-import { itemsForPet, ItemDef } from "../data/items";
+} from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { usePet } from '../context/PetContext';
+import { itemsForPet, ItemDef } from '../data/items';
 
-type DefaultRow = { kind: "default" };
-type SpacerRow = { kind: "spacer" };
+type DefaultRow = { kind: 'default' };
+type SpacerRow = { kind: 'spacer' };
 type ShopRow = ItemDef | DefaultRow | SpacerRow;
 
 function isDefaultRow(row: ShopRow): row is DefaultRow {
-  return (row as any).kind === "default";
+  return (row as any).kind === 'default';
 }
 function isSpacerRow(row: ShopRow): row is SpacerRow {
-  return (row as any).kind === "spacer";
+  return (row as any).kind === 'spacer';
 }
 
-const coinIcon = require("../assets/coin.png");
+const coinIcon = require('../assets/coin.png');
 
 const baseImgs = {
-  Strawb: require("../assets/STRAWB.png"),
-  Rugy: require("../assets/RUGY.png"),
-  Ceviche: require("../assets/CEVICHE.png"),
+  Strawb: require('../assets/STRAWB.png'),
+  Rugy: require('../assets/RUGY.png'),
+  Ceviche: require('../assets/CEVICHE.png'),
 } as const;
 
 export default function ShopScreen({ navigation }: any) {
@@ -46,10 +47,13 @@ export default function ShopScreen({ navigation }: any) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Closet</Text>
-        <Text style={styles.emptyText}>Pick a pet first 🐣</Text>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Text style={styles.emptyText}>Pick a pet first</Text>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backBtnText}>Go back</Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -58,9 +62,12 @@ export default function ShopScreen({ navigation }: any) {
   const eq = equippedByPet[selectedPetId] || {};
 
   // Build grid list (default + pet items + spacer if odd)
-  const baseList: ShopRow[] = [{ kind: "default" }, ...itemsForPet(selectedPetId)];
+  const baseList: ShopRow[] = [
+    { kind: 'default' },
+    ...itemsForPet(selectedPetId),
+  ];
   const list: ShopRow[] =
-    baseList.length % 2 === 1 ? [...baseList, { kind: "spacer" }] : baseList;
+    baseList.length % 2 === 1 ? [...baseList, { kind: 'spacer' }] : baseList;
 
   const onPressItem = async (item: ItemDef) => {
     const owned = ownedIds.includes(item.id);
@@ -70,8 +77,8 @@ export default function ShopScreen({ navigation }: any) {
       const ok = await buyItem(item.id);
       if (!ok) {
         Alert.alert(
-          "Not enough coins 😭",
-          "Complete a focus session to earn more!"
+          'Not enough coins',
+          'Complete a focus session to earn more!',
         );
         return;
       }
@@ -96,9 +103,10 @@ export default function ShopScreen({ navigation }: any) {
       const regularEquipped = !hasAnythingEquipped;
 
       return (
-        <Pressable
+        <TouchableOpacity
           onPress={unequipAll}
           style={[styles.card, regularEquipped && styles.cardEquipped]}
+          activeOpacity={0.7}
         >
           <View style={styles.imgArea}>
             <Image source={baseImgs[selectedPetId]} style={styles.previewImg} />
@@ -108,11 +116,11 @@ export default function ShopScreen({ navigation }: any) {
 
           <View style={styles.bottomArea}>
             <View style={styles.ownedRow}>
-              <Text style={styles.ownedCheck}>✓</Text>
+              <MaterialIcons name="check-circle" size={14} color="#6FAF8A" />
               <Text style={styles.ownedText}>Owned</Text>
             </View>
           </View>
-        </Pressable>
+        </TouchableOpacity>
       );
     }
 
@@ -121,13 +129,14 @@ export default function ShopScreen({ navigation }: any) {
     const equipped = eq[item.slot] === item.id;
 
     return (
-      <Pressable
+      <TouchableOpacity
         onPress={() => onPressItem(item)}
         style={[
           styles.card,
           equipped && styles.cardEquipped,
-          !owned && styles.cardLocked, //  greyed out when not owned
+          !owned && styles.cardLocked,
         ]}
+        activeOpacity={0.7}
       >
         <View style={styles.imgArea}>
           <Image
@@ -143,7 +152,7 @@ export default function ShopScreen({ navigation }: any) {
         <View style={styles.bottomArea}>
           {owned ? (
             <View style={styles.ownedRow}>
-              <Text style={styles.ownedCheck}>✓</Text>
+              <MaterialIcons name="check-circle" size={14} color="#6FAF8A" />
               <Text style={styles.ownedText}>Owned</Text>
             </View>
           ) : (
@@ -153,7 +162,7 @@ export default function ShopScreen({ navigation }: any) {
             </View>
           )}
         </View>
-      </Pressable>
+      </TouchableOpacity>
     );
   };
 
@@ -161,11 +170,15 @@ export default function ShopScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
-          <Text style={styles.back}>←</Text>
-        </Pressable>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back" size={22} color="#3C5A49" />
+        </TouchableOpacity>
 
-        <Text style={styles.title}>Closet</Text>
+        <Text style={styles.title}>closet</Text>
 
         <View style={styles.balancePill}>
           <Image source={coinIcon} style={styles.coinIcon} />
@@ -175,9 +188,9 @@ export default function ShopScreen({ navigation }: any) {
 
       <FlatList
         data={list}
-        keyExtractor={(row) => {
-          if (isDefaultRow(row)) return "default";
-          if (isSpacerRow(row)) return "spacer";
+        keyExtractor={row => {
+          if (isDefaultRow(row)) return 'default';
+          if (isSpacerRow(row)) return 'spacer';
           return row.id;
         }}
         numColumns={2}
@@ -189,85 +202,109 @@ export default function ShopScreen({ navigation }: any) {
   );
 }
 
-const BG = "#F6FAF7";
-const GREEN = "#3C5A49";
-const GREEN_MID = "#6B7D73";
-const CARD_BG = "#FFFFFF";
-const PILL_BG = "#E7F3EC";
-const ACCENT = "#6FAF8A";
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG, padding: 24, paddingTop: 80 },
+  container: {
+    flex: 1,
+    backgroundColor: '#F6FAF7',
+    padding: 20,
+    paddingTop: 60,
+  },
 
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
-  back: { fontSize: 22, color: GREEN },
-  title: { fontSize: 22, fontWeight: "900", color: "#2E3D35" },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#E7F3EC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#3C5A49',
+    letterSpacing: 0.5,
+  },
 
   balancePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: PILL_BG,
+    borderRadius: 14,
+    backgroundColor: '#E7F3EC',
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
   },
-  coinIcon: { width: 18, height: 18, borderRadius: 9 },
-  balanceText: { fontWeight: "900", color: GREEN, fontSize: 16 },
+  coinIcon: { width: 16, height: 16, borderRadius: 8 },
+  balanceText: {
+    fontWeight: '600',
+    color: '#3C5A49',
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
 
-  row: { gap: 14 },
-  listContent: { gap: 14, paddingBottom: 20 },
+  row: { gap: 12 },
+  listContent: { gap: 12, paddingBottom: 20 },
 
   card: {
     flex: 1,
-    backgroundColor: CARD_BG,
-    borderRadius: 24,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    height: 250, // a bit taller
-
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    backgroundColor: '#E7F3EC',
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    height: 300,
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+    shadowColor: '#3C5A49',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
 
-  // greyed out card when not owned
   cardLocked: {
     opacity: 0.55,
   },
 
   spacerCard: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
+    borderWidth: 0,
     shadowOpacity: 0,
     elevation: 0,
   },
 
   cardEquipped: {
     borderWidth: 2,
-    borderColor: ACCENT,
+    borderColor: '#6FAF8A',
   },
 
   imgArea: {
-    height: 125,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 6,
-    marginBottom: 10,
+    height: 192,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 8,
   },
 
-  // slightly bigger images
   previewImg: {
-    width: 112,
-    height: 112,
-    resizeMode: "contain",
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
   },
 
   lockedImg: {
@@ -275,54 +312,54 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: GREEN,
-    textAlign: "center",
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3C5A49',
+    textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: 0.3,
   },
 
   lockedText: {
-    color: GREEN_MID,
+    color: '#6B7D73',
   },
 
   bottomArea: {
-    marginTop: "auto",
-    paddingBottom: 6,
-    width: "100%",
-    alignItems: "center",
+    marginTop: 'auto',
+    paddingBottom: 4,
+    width: '100%',
+    alignItems: 'center',
   },
 
   ownedRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    justifyContent: "center",
-  },
-  ownedCheck: {
-    fontSize: 16,
-    color: ACCENT,
-    fontWeight: "900",
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    justifyContent: 'center',
   },
   ownedText: {
-    fontSize: 15,
-    color: "#7DAA86",
-    fontWeight: "800",
+    fontSize: 13,
+    color: '#6FAF8A',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 
   pricePill: {
-    backgroundColor: PILL_BG,
-    borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    backgroundColor: '#F6FAF7',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderColor: '#D4E5DA',
   },
   priceText: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: GREEN,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3C5A49',
+    letterSpacing: 0.2,
   },
   priceCoin: {
     width: 14,
@@ -330,13 +367,24 @@ const styles = StyleSheet.create({
     borderRadius: 7,
   },
 
-  emptyText: { marginTop: 14, color: GREEN_MID, fontWeight: "700" },
+  emptyText: {
+    marginTop: 14,
+    color: '#6B7D73',
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
   backBtn: {
     marginTop: 14,
-    backgroundColor: ACCENT,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 999,
+    backgroundColor: '#6FAF8A',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#5A9A75',
   },
-  backBtnText: { color: "white", fontWeight: "800" },
+  backBtnText: {
+    color: 'white',
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
 });

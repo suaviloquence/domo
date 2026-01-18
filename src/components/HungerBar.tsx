@@ -1,5 +1,5 @@
-import React from "react";
-import { Image, StyleSheet, View } from "react-native";
+import React from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 
 type Props = {
   hunger: number; // 0..5
@@ -9,11 +9,11 @@ type Props = {
 
 // path
 const BARS = {
-  20: require("../assets/hunger/healthbar_20.png"),
-  40: require("../assets/hunger/healthbar_40.png"),
-  60: require("../assets/hunger/healthbar_60.png"),
-  80: require("../assets/hunger/healthbar_80.png"),
-  100: require("../assets/hunger/healthbar_100.png"),
+  20: require('../assets/hunger/healthbar_20.png'),
+  40: require('../assets/hunger/healthbar_40.png'),
+  60: require('../assets/hunger/healthbar_60.png'),
+  80: require('../assets/hunger/healthbar_80.png'),
+  100: require('../assets/hunger/healthbar_100.png'),
 } as const;
 
 function hungerToPct(hunger: number): 20 | 40 | 60 | 80 | 100 {
@@ -25,17 +25,22 @@ function hungerToPct(hunger: number): 20 | 40 | 60 | 80 | 100 {
   return 100;
 }
 
-export default function HungerBar({ hunger, width = 140, height = 28 }: Props) {
+export default function HungerBar({ hunger, width = 200, height = 50 }: Props) {
   const pct = hungerToPct(hunger);
 
   return (
     <View style={[styles.wrap, { width, height }]}>
-      <Image source={BARS[pct]} style={styles.img} resizeMode="contain" />
+      <Image
+        key={pct}
+        source={BARS[pct]}
+        style={styles.img}
+        resizeMode="contain"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: "center", justifyContent: "center" },
-  img: { width: "100%", height: "100%" },
+  wrap: { alignItems: 'center', justifyContent: 'center' },
+  img: { width: '100%', height: '100%' },
 });

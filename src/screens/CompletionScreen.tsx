@@ -10,10 +10,10 @@ interface CompletionScreenProps {
 }
 
 function calculateFocusRewards(totalSeconds: number) {
-  const K = 1/10000;
+  const K = 1 / 10000;
   return {
-    coinsShouldHave: Math.floor((totalSeconds / 600) / K), // 1 coin per 10 min, scaled by K
-    foodShouldHave: Math.floor((totalSeconds / 1800) / K), // 1 food per 30 min, scaled by K
+    coinsShouldHave: Math.floor(totalSeconds / 600 / K), // 1 coin per 10 min, scaled by K
+    foodShouldHave: Math.floor(totalSeconds / 1800 / K), // 1 food per 30 min, scaled by K
   };
 }
 
@@ -42,9 +42,13 @@ export default function CompletionScreen({
   const timeSpent = route?.params?.timeSpent || 25 * 60; // seconds
   const goal = route?.params?.goal || '';
   const startTime = route?.params?.startTime || Date.now() - timeSpent * 1000; // timestamp in milliseconds
-  
+
   // Track if streak was extended
   const [streakExtended, setStreakExtended] = useState(false);
+
+  // Track rewards granted this session for display
+  const [coinReward, setCoinReward] = useState(0);
+  const [foodReward, setFoodReward] = useState(0);
 
   // Use a ref to track which timeSpent we've already processed
   const processedTimeSpentRef = useRef<number | null>(null);
@@ -71,29 +75,30 @@ export default function CompletionScreen({
       const coinsToGrant = coinsShouldHave - currentCoinsEarned;
       const foodToGrant = foodShouldHave - currentFoodEarned;
 
-      if (coinsToGrant > 0 || foodToGrant > 0) {
-        setCoinsEarnedFromFocus(currentCoinsEarned + coinsToGrant);
-        setFood(currentFood + foodToGrant);
-        setFoodEarnedFromFocus(currentFoodEarned + foodToGrant);
+      // Store rewards for display
+      setCoinReward(coinsToGrant);
+      setFoodReward(foodToGrant);
+
+      if (coinsToGrant > 0) {
+        await addCoins(coinsToGrant);
+        await setCoinsEarnedFromFocus(currentCoinsEarned + coinsToGrant);
       }
-      setTotalFocusSeconds(newTotalSeconds);
-      
+      if (foodToGrant > 0) {
+        await setFood(currentFood + foodToGrant);
+        await setFoodEarnedFromFocus(currentFoodEarned + foodToGrant);
+      }
+      await setTotalFocusSeconds(newTotalSeconds);
+
       // Update streak
       const previousStreak = streak;
       await completeFocusSession();
       setStreakExtended(streak > previousStreak);
-      
+
       // Check and deplete hunger
       await checkAndDepleteHunger();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeSpent]); // Only depend on timeSpent to detect new sessions
-
-  // Calculate rewards for display (using total accumulated time)
-  const newTotalSeconds = totalFocusSeconds + timeSpent;
-  const { coinsShouldHave, foodShouldHave } = calculateFocusRewards(newTotalSeconds);
-  const foodReward = foodShouldHave - foodEarnedFromFocus;
-  const coinReward = coinsShouldHave - coinsEarnedFromFocus;
 
   const [reflected, setReflected] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -136,28 +141,42 @@ export default function CompletionScreen({
       {/* Congratulatory Message */}
       <View style={styles.top}>
         <View style={styles.congratsContainer}>
-          <MaterialIcons name="celebration" size={32} color="#3C5A49" />
+          <MaterialIcons name="celebration" size={28} color="#6FAF8A" />
           <Text style={styles.congrats}>Congratulations!</Text>
-          <MaterialIcons name="celebration" size={32} color="#3C5A49" />
+          <MaterialIcons name="celebration" size={28} color="#6FAF8A" />
         </View>
-        <Text style={styles.infoText}>
-          You spent {formatTime(timeSpent)} on "{goal}"
-        </Text>
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoText}>
+            You spent {formatTime(timeSpent)} on
+          </Text>
+          <Text style={styles.goalText}>"{goal}"</Text>
+        </View>
       </View>
 
       {/* Reward Card */}
       <View style={styles.card}>
+        <Text style={styles.cardTitle}>Rewards</Text>
         <View style={styles.rewardRow}>
-          <MaterialIcons name="restaurant" size={20} color="#3C5A49" />
+          <View style={styles.rewardIconContainer}>
+            <MaterialIcons name="restaurant" size={18} color="#3C5A49" />
+          </View>
           <Text style={styles.cardText}>+{foodReward} Food</Text>
         </View>
         <View style={styles.rewardRow}>
-          <MaterialIcons name="monetization-on" size={20} color="#3C5A49" />
+          <View style={styles.rewardIconContainer}>
+            <MaterialIcons name="monetization-on" size={18} color="#3C5A49" />
+          </View>
           <Text style={styles.cardText}>+{coinReward} Coins</Text>
         </View>
         {streakExtended && (
           <View style={styles.rewardRow}>
-            <MaterialIcons name="local-fire-department" size={20} color="#FF6B35" />
+            <View style={[styles.rewardIconContainer, styles.streakIcon]}>
+              <MaterialIcons
+                name="local-fire-department"
+                size={18}
+                color="#FF6B35"
+              />
+            </View>
             <Text style={styles.cardText}>Streak Extended!</Text>
           </View>
         )}
@@ -166,24 +185,34 @@ export default function CompletionScreen({
       {/* Reflection Section */}
       <View style={styles.reflection}>
         <Text style={styles.reflectionText}>
-          Take a moment to reflect on how it went:
+          Take a moment to reflect on how it went
         </Text>
         <TouchableOpacity
-          style={[
-            styles.reflectButton,
-            { backgroundColor: reflected ? '#999' : '#6FAF8A' },
-          ]}
+          style={[styles.reflectButton, reflected && styles.reflectButtonDone]}
           onPress={handleReflect}
           disabled={reflected}
+          activeOpacity={0.8}
         >
           <View style={styles.reflectButtonContent}>
-            <Text style={styles.reflectButtonText}>
-              {reflected ? 'Reflected' : 'Reflect for 30s'}
-            </Text>
-            {reflected && (
-              <MaterialIcons name="check-circle" size={18} color="white" style={styles.checkIcon} />
+            {reflected ? (
+              <MaterialIcons
+                name="check-circle"
+                size={18}
+                color="white"
+                style={styles.checkIcon}
+              />
+            ) : (
+              <MaterialIcons
+                name="edit"
+                size={18}
+                color="white"
+                style={styles.checkIcon}
+              />
             )}
-            <Text style={styles.reflectButtonText}> (+1 Coin)</Text>
+            <Text style={styles.reflectButtonText}>
+              {reflected ? 'Reflected' : 'Reflect'}
+            </Text>
+            <Text style={styles.reflectButtonSubtext}>(+1 Coin)</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -192,7 +221,9 @@ export default function CompletionScreen({
       <TouchableOpacity
         style={styles.homeButton}
         onPress={() => navigation.popToTop()}
+        activeOpacity={0.8}
       >
+        <MaterialIcons name="home" size={20} color="white" />
         <Text style={styles.homeButtonText}>Back to Home</Text>
       </TouchableOpacity>
 
@@ -215,84 +246,151 @@ const styles = StyleSheet.create({
   },
   top: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 50,
   },
   congratsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   congrats: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '600',
     textAlign: 'center',
-    marginHorizontal: 8,
+    marginHorizontal: 10,
+    color: '#3C5A49',
+    letterSpacing: 0.5,
+  },
+  infoContainer: {
+    alignItems: 'center',
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#6B7D73',
+    textAlign: 'center',
+    letterSpacing: 0.2,
+  },
+  goalText: {
+    fontSize: 17,
+    color: '#3C5A49',
+    fontWeight: '500',
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
+  card: {
+    backgroundColor: '#E7F3EC',
+    borderRadius: 18,
+    padding: 24,
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+    shadowColor: '#3C5A49',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7D73',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 16,
   },
   rewardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
+    marginVertical: 6,
+  },
+  rewardIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#F6FAF7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#D4E5DA',
+  },
+  streakIcon: {
+    backgroundColor: '#FFF5F0',
+    borderColor: '#FFE0D4',
   },
   cardText: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '600',
-    marginLeft: 8,
-  },
-  infoText: {
-    fontSize: 18,
     color: '#3C5A49',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    letterSpacing: 0.2,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+  reflection: {
     alignItems: 'center',
+  },
+  reflectionText: {
+    fontSize: 15,
+    marginBottom: 14,
+    textAlign: 'center',
+    color: '#6B7D73',
+    letterSpacing: 0.2,
+  },
+  reflectButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 16,
+    backgroundColor: '#6FAF8A',
+    borderWidth: 2,
+    borderColor: '#5A9A75',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  reflectButtonDone: {
+    backgroundColor: '#6B7D73',
+    borderColor: '#5A6B63',
   },
   reflectButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   checkIcon: {
-    marginLeft: 4,
-    marginRight: 4,
-  },
-  reflection: {
-    marginTop: 32,
-    alignItems: 'center',
-  },
-  reflectionText: {
-    fontSize: 16,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  reflectButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 999,
-    alignItems: 'center',
+    marginRight: 6,
   },
   reflectButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  reflectButtonSubtext: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
   },
   homeButton: {
-    paddingVertical: 14,
-    borderRadius: 999,
-    backgroundColor: '#6FAF8A',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#6FAF8A',
     marginBottom: 24,
+    gap: 8,
+    borderWidth: 2,
+    borderColor: '#5A9A75',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   homeButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });

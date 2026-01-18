@@ -103,8 +103,8 @@ export default function JournalScreen({ navigation }: JournalScreenProps) {
           <MaterialIcons
             key={index}
             name={index <= stars ? 'star' : 'star-border'}
-            size={18}
-            color={index <= stars ? '#FFB800' : '#CCC'}
+            size={16}
+            color={index <= stars ? '#FFB800' : '#D4E5DA'}
             style={styles.starIcon}
           />
         ))}
@@ -124,14 +124,11 @@ export default function JournalScreen({ navigation }: JournalScreenProps) {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
         >
-          <MaterialIcons name="arrow-back" size={20} color="#6FAF8A" />
-          <Text style={styles.backButtonText}>Back</Text>
+          <MaterialIcons name="arrow-back" size={22} color="#3C5A49" />
         </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <MaterialIcons name="menu-book" size={24} color="#3C5A49" style={styles.headerIcon} />
-          <Text style={styles.headerTitle}>Journal</Text>
-        </View>
+        <Text style={styles.headerTitle}>journal</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -139,10 +136,11 @@ export default function JournalScreen({ navigation }: JournalScreenProps) {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {sortedDates.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialIcons name="description" size={64} color="#CCC" />
+            <View style={styles.emptyIconContainer}>
+              <MaterialIcons name="menu-book" size={48} color="#B8C9BD" />
+            </View>
             <Text style={styles.emptyStateText}>
-              No journal entries yet.{'\n'}Complete a focus session and reflect
-              to see your entries here!
+              No journal entries yet.{'\n'}Complete a focus session to see your entries here!
             </Text>
           </View>
         ) : (
@@ -156,23 +154,25 @@ export default function JournalScreen({ navigation }: JournalScreenProps) {
                       <Text style={styles.entryTime}>
                         {formatTime(entry.startTime)}
                       </Text>
-                      <Text style={styles.entryDuration}>
-                        {formatDuration(entry.duration)}
-                      </Text>
+                      <View style={styles.durationBadge}>
+                        <Text style={styles.entryDuration}>
+                          {formatDuration(entry.duration)}
+                        </Text>
+                      </View>
                     </View>
                     {renderStars(entry.stars)}
                   </View>
 
                   {entry.goal && (
                     <View style={styles.entryGoalContainer}>
-                      <MaterialIcons name="flag" size={16} color="#3C5A49" />
+                      <MaterialIcons name="flag" size={14} color="#6FAF8A" />
                       <Text style={styles.entryGoal}>{entry.goal}</Text>
                     </View>
                   )}
 
                   {entry.reflection && (
                     <View style={styles.reflectionContainer}>
-                      <Text style={styles.reflectionLabel}>Reflection:</Text>
+                      <Text style={styles.reflectionLabel}>Reflection</Text>
                       <Text style={styles.reflectionText}>
                         {entry.reflection}
                       </Text>
@@ -199,35 +199,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: '#F6FAF7',
+    paddingBottom: 20,
   },
   backButton: {
-    flexDirection: 'row',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#E7F3EC',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#6FAF8A',
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerIcon: {
-    marginRight: 8,
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#3C5A49',
+    letterSpacing: 0.5,
   },
   headerSpacer: {
-    width: 60,
+    width: 44,
   },
   scrollView: {
     flex: 1,
@@ -241,38 +237,53 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 80,
   },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: '#E7F3EC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+  },
   emptyStateText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
+    color: '#6B7D73',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
+    letterSpacing: 0.2,
   },
   daySection: {
-    marginBottom: 32,
+    marginBottom: 28,
   },
   dayHeader: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#3C5A49',
-    marginBottom: 16,
+    marginBottom: 14,
+    letterSpacing: 0.3,
   },
   entryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#E7F3EC',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
     borderLeftWidth: 4,
     borderLeftColor: '#6FAF8A',
+    shadowColor: '#3C5A49',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 8,
   },
   entryTimeRow: {
@@ -280,14 +291,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   entryTime: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#3C5A49',
-    marginRight: 8,
+    marginRight: 10,
+    letterSpacing: 0.3,
+  },
+  durationBadge: {
+    backgroundColor: '#F6FAF7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D4E5DA',
   },
   entryDuration: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 12,
+    color: '#6B7D73',
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   starsContainer: {
     flexDirection: 'row',
@@ -299,25 +321,26 @@ const styles = StyleSheet.create({
   entryGoalContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 4,
   },
   entryGoal: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#3C5A49',
     marginLeft: 6,
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
   reflectionContainer: {
-    marginTop: 8,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: '#D4E5DA',
   },
   reflectionLabel: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
-    color: '#666',
+    color: '#6B7D73',
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -326,5 +349,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#3C5A49',
     lineHeight: 20,
+    letterSpacing: 0.2,
   },
 });

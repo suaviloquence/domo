@@ -1,183 +1,229 @@
 // src/screens/HomeScreen.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-} from "react-native";
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+  Image,
+} from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { usePet } from "../context/PetContext";
-import TimerModal from "../components/TimerModal";
-import PetDisplay from "../components/PetDisplay";
-import HungerBar from "../components/HungerBar";
+import { usePet } from '../context/PetContext';
+import TimerModal from '../components/TimerModal';
+import PetDisplay from '../components/PetDisplay';
+import HungerBar from '../components/HungerBar';
 
-const NAME_KEY = "petName";
+const coinIcon = require('../assets/coin.png');
+const journalIcon = require('../assets/journal.png');
+
+const NAME_KEY = 'petName';
+const BUTTON_WIDTH = 300;
 
 export default function HomeScreen({ navigation }: any) {
   const {
     selectedPetId,
     coins,
     streak,
-    addCoins,
     hunger,
     setHunger,
     food,
     setFood,
     feedPet,
   } = usePet();
-  
 
   const [timerModalVisible, setTimerModalVisible] = useState(false);
   const [devMenuVisible, setDevMenuVisible] = useState(false);
 
   // editable name
-  const [petName, setPetName] = useState("focus pal");
+  const [petName, setPetName] = useState('focus pal');
   const [isEditingName, setIsEditingName] = useState(false);
 
   useEffect(() => {
     (async () => {
       const savedName = await AsyncStorage.getItem(NAME_KEY);
       if (savedName) setPetName(savedName);
-      // NOTE: hunger decay/loading is handled in PetContext (recommended)
-      // If not yet, add the effects there instead of here.
     })();
   }, []);
 
   const saveName = async () => {
-    const trimmed = petName.trim() || "focus pal";
+    const trimmed = petName.trim() || 'focus pal';
     setPetName(trimmed);
     await AsyncStorage.setItem(NAME_KEY, trimmed);
     setIsEditingName(false);
   };
 
   const handleFeed = async () => {
-    if (hunger >= 5) return; // already full
+    if (food <= 0 || hunger >= 5) return;
     await feedPet();
   };
 
   return (
     <View style={styles.container}>
-      {/* Top Bar */}
+      {/* Top Status Bar */}
       <View style={styles.topBar}>
-        {/* Left: Journal */}
-        <TouchableOpacity
-          style={styles.topBarButton}
-          onPress={() => navigation.navigate("Journal")}
-        >
-          <MaterialIcons name="menu-book" size={22} color="#3C5A49" />
-        </TouchableOpacity>
+        <View style={styles.statusPill}>
+          {/* Left: Hunger */}
+          <View style={styles.hungerSection}>
+            <HungerBar hunger={hunger} width={120} height={30} />
+          </View>
 
-        {/* Center: Hunger + Coins + Streak */}
-        <View style={styles.centerStatus}>
-          <View style={styles.statusRowBig}>
-            <MaterialIcons name="restaurant" size={16} color="#3C5A49" />
-            <HungerBar hunger={hunger} width={90} height={18} />
-
-            <MaterialIcons
-              name="monetization-on"
-              size={16}
-              color="#3C5A49"
-              style={styles.statusIconSpacing}
-            />
-            <Text style={styles.statusTextBig}>{coins}</Text>
-
-            <Text style={styles.statusDividerBig}>•</Text>
-
+          {/* Right: Coins & Streak with accent border */}
+          <View style={styles.statsSection}>
+            <Image source={coinIcon} style={styles.coinIcon} />
+            <Text style={styles.statText}>{coins}</Text>
+            <View style={styles.statDivider} />
             <MaterialIcons
               name="local-fire-department"
               size={16}
               color="#FF6B35"
-              style={styles.statusIconSpacing}
             />
-            <Text style={styles.statusTextBig}>{streak}</Text>
+            <Text style={styles.statText}>{streak}</Text>
           </View>
         </View>
-
-        {/* Right spacer so center stays visually centered */}
-        <View style={styles.rightSpacer} />
       </View>
 
-      {/* Editable Title */}
-      <View style={styles.titleRow}>
-        {isEditingName ? (
-          <>
-            <TextInput
-              value={petName}
-              onChangeText={setPetName}
-              style={styles.titleInput}
-              autoFocus
-              maxLength={16}
-              returnKeyType="done"
-              onSubmitEditing={saveName}
-            />
-            <TouchableOpacity onPress={saveName} style={styles.editBtn}>
-              <MaterialIcons name="check" size={16} color="#3C5A49" />
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text style={styles.title}>{petName}</Text>
+      {/* Center Content */}
+      <View style={styles.centerContent}>
+        {/* Editable Pet Name */}
+        <View style={styles.nameRow}>
+          {isEditingName ? (
+            <View style={styles.nameEditContainer}>
+              <TextInput
+                value={petName}
+                onChangeText={setPetName}
+                style={styles.nameInput}
+                autoFocus
+                maxLength={16}
+                returnKeyType="done"
+                onSubmitEditing={saveName}
+                onBlur={saveName}
+              />
+            </View>
+          ) : (
             <TouchableOpacity
+              style={styles.nameDisplay}
               onPress={() => setIsEditingName(true)}
-              style={styles.editBtn}
             >
-              <MaterialIcons name="edit" size={16} color="#3C5A49" />
+              <Text style={styles.nameText}>{petName}</Text>
+              <MaterialIcons
+                name="edit"
+                size={14}
+                color="#9BA8A0"
+                style={styles.editIcon}
+              />
             </TouchableOpacity>
-          </>
+          )}
+        </View>
+
+        {/* Pet Display */}
+        <View style={styles.petContainer}>
+          <PetDisplay selectedPetId={selectedPetId} size={240} />
+        </View>
+      </View>
+
+      {/* Bottom Actions */}
+      <View style={styles.bottomActions}>
+        {/* Focus Button */}
+        <TouchableOpacity
+          style={styles.focusButton}
+          onPress={() => setTimerModalVisible(true)}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="timer" size={20} color="white" />
+          <Text style={styles.focusButtonText}>enter focus mode</Text>
+        </TouchableOpacity>
+
+        {/* Icon Button Row */}
+        <View style={styles.iconButtonRow}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('Journal')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconButtonInner}>
+              <Image source={journalIcon} style={styles.iconButtonImage} />
+            </View>
+            <Text style={styles.iconButtonLabel}>journal</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.iconButton,
+              (food <= 0 || hunger >= 5) && styles.iconButtonDisabled,
+            ]}
+            onPress={handleFeed}
+            disabled={food <= 0 || hunger >= 5}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconButtonInner}>
+              <View style={styles.foodIconContainer}>
+                <MaterialIcons
+                  name="restaurant-menu"
+                  size={22}
+                  color={food <= 0 || hunger >= 5 ? '#B8C9BD' : '#3C5A49'}
+                />
+                <View
+                  style={[
+                    styles.foodBadge,
+                    (food <= 0 || hunger >= 5) && styles.foodBadgeDisabled,
+                  ]}
+                >
+                  <Text style={styles.foodBadgeText}>{food}</Text>
+                </View>
+              </View>
+            </View>
+            <Text
+              style={[
+                styles.iconButtonLabel,
+                (food <= 0 || hunger >= 5) && styles.iconButtonLabelDisabled,
+              ]}
+            >
+              feed
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('Shop')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconButtonInner}>
+              <MaterialIcons name="checkroom" size={22} color="#3C5A49" />
+            </View>
+            <Text style={styles.iconButtonLabel}>closet</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('Settings')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconButtonInner}>
+              <MaterialIcons name="settings" size={22} color="#3C5A49" />
+            </View>
+            <Text style={styles.iconButtonLabel}>settings</Text>
+          </TouchableOpacity>
+        </View>
+
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={() => setDevMenuVisible(true)}
+          >
+            <Text style={styles.devButtonText}>dev menu</Text>
+          </TouchableOpacity>
         )}
       </View>
-
-      {/* Pet Card */}
-      <View style={styles.card}>
-        <PetDisplay selectedPetId={selectedPetId} size={220} />
-        <Text style={styles.caption}>
-          {hunger <= 2 ? "your pet is hungry..." : "your pet grows when you lock in"}
-        </Text>
-      </View>
-
-      {/* Feed Button (no food inventory yet — just fills hunger) */}
-      <TouchableOpacity
-        style={[styles.feedButton, hunger >= 5 && styles.feedButtonDisabled]}
-        onPress={handleFeed}
-        disabled={hunger >= 5}
-      >
-        <MaterialIcons name="restaurant-menu" size={18} color="white" />
-        <Text style={styles.feedButtonText}>
-          {hunger >= 5 ? "Pet is full" : "Feed Pet"}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Actions */}
-      <TouchableOpacity style={styles.button} onPress={() => setTimerModalVisible(true)}>
-        <Text style={styles.buttonText}>start focus session</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: "#3C5A49" }]}
-        onPress={() => navigation.navigate("Shop")}
-      >
-        <Text style={styles.buttonText}>closet</Text>
-      </TouchableOpacity>
-
-      {__DEV__ && (
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#8B5CF6" }]}
-          onPress={() => setDevMenuVisible(true)}
-        >
-          <Text style={styles.buttonText}>dev: state menu</Text>
-        </TouchableOpacity>
-      )}
 
       {/* Timer Modal */}
       <TimerModal
         visible={timerModalVisible}
         onStart={(minutes, seconds, goal) => {
           setTimerModalVisible(false);
-          navigation.navigate("Focus", {
+          navigation.navigate('Focus', {
             seconds: minutes * 60 + seconds,
             goal,
           });
@@ -185,7 +231,7 @@ export default function HomeScreen({ navigation }: any) {
         onCancel={() => setTimerModalVisible(false)}
       />
 
-      {/* Dev Menu Overlay (simple controls that match context) */}
+      {/* Dev Menu Overlay */}
       {__DEV__ && devMenuVisible && (
         <View style={styles.devModalOverlay}>
           <View style={styles.devModal}>
@@ -196,56 +242,41 @@ export default function HomeScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
-        {/* Hunger Debug */}
-        <View style={styles.devModalSection}>
-          <Text style={styles.devModalSectionTitle}>Hunger</Text>
-
-          <View style={styles.devButtonRow}>
-            {[0, 1, 2, 3, 4, 5].map((level) => (
-              <TouchableOpacity
-                key={level}
-                style={[
-                  styles.devButtonSmall,
-                  hunger === level ? styles.devButtonActive : null,
-                ]}
-                
-                onPress={() => setHunger(level)}
-              >
-                <Text style={styles.devButtonTextSmall}>{level}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Food Debug */}
-        <View style={styles.devModalSection}>
-          <Text style={styles.devModalSectionTitle}>Food</Text>
-
-          <View style={styles.devButtonRow}>
-            {[0, 5, 10, 50].map((amt) => (
-              <TouchableOpacity
-                key={amt}
-                style={styles.devButtonSmall}
-                onPress={() => setFood(amt)}
-              >
-                <Text style={styles.devButtonTextSmall}>{amt}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
+            <View style={styles.devModalSection}>
+              <Text style={styles.devModalSectionTitle}>Hunger</Text>
+              <View style={styles.devButtonRow}>
+                {[0, 1, 2, 3, 4, 5].map(level => (
+                  <TouchableOpacity
+                    key={level}
+                    style={[
+                      styles.devButtonSmall,
+                      hunger === level ? styles.devButtonActive : null,
+                    ]}
+                    onPress={() => setHunger(level)}
+                  >
+                    <Text style={styles.devButtonTextSmall}>{level}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
             <View style={styles.devModalSection}>
-              <Text style={styles.devModalSectionTitle}>Hunger (debug)</Text>
-              <Text style={styles.devHint}>
-                Hunger is stored in context. To test the bar quickly, tap Feed a few times
-                (or implement a setHunger debug function in context).
-              </Text>
+              <Text style={styles.devModalSectionTitle}>Food</Text>
+              <View style={styles.devButtonRow}>
+                {[0, 5, 10, 50].map(amt => (
+                  <TouchableOpacity
+                    key={amt}
+                    style={styles.devButtonSmall}
+                    onPress={() => setFood(amt)}
+                  >
+                    <Text style={styles.devButtonTextSmall}>{amt}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </View>
         </View>
       )}
-      
     </View>
   );
 }
@@ -253,198 +284,293 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F6FAF7",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
+    backgroundColor: '#F6FAF7',
   },
 
-  /* Top bar */
+  /* Top Status Bar */
   topBar: {
-    position: "absolute",
-    top: 50,
-    left: 0,
-    right: 0,
+    paddingTop: 60,
     paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: 'center',
   },
-  topBarButton: { padding: 8 },
-
-  rightSpacer: { width: 22 + 16 },
-
-  centerStatus: {
-    alignItems: "center",
-    justifyContent: "center",
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E7F3EC',
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  statusRowBig: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  hungerSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  statusTextBig: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#3C5A49",
-    marginLeft: 4,
+  statsSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 14,
+    paddingLeft: 14,
+    borderLeftWidth: 2,
+    borderLeftColor: '#6FAF8A',
+    gap: 4,
   },
-  statusDividerBig: {
-    fontSize: 15,
-    color: "#6B7D73",
-    marginHorizontal: 4,
-  },
-  statusIconSpacing: {
-    marginLeft: 6,
-  },
-
-  /* Title / name */
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  titleInput: {
-    fontSize: 28,
-    fontWeight: "700",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    backgroundColor: "#E7F3EC",
-    color: "#3C5A49",
-    minWidth: 160,
-    textAlign: "center",
-  },
-  editBtn: {
-    padding: 6,
-    borderRadius: 999,
-    backgroundColor: "#E7F3EC",
-    marginLeft: 10,
-  },
-
-  /*devButtonActivate*/
-  devButtonActive: {
-    backgroundColor: "#6FAF8A",
-  },
-
-  /* Card */
-  card: {
-    width: "100%",
-    maxWidth: 340,
-    backgroundColor: "#E7F3EC",
-    borderRadius: 24,
-    padding: 22,
-    alignItems: "center",
-  },
-  caption: {
+  statText: {
     fontSize: 14,
-    color: "#3C5A49",
-    marginTop: 8,
+    fontWeight: '600',
+    color: '#3C5A49',
+    marginLeft: 3,
+    letterSpacing: 0.3,
+  },
+  statDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#B8C9BD',
+    marginHorizontal: 8,
   },
 
-  /* Buttons */
-  feedButton: {
-    backgroundColor: "#FF6B35",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 999,
-    width: "100%",
-    maxWidth: 340,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
+  /* Center Content */
+  centerContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameRow: {
     marginBottom: 12,
   },
-  feedButtonDisabled: {
-    backgroundColor: "#CCC",
+  nameDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  nameText: {
+    fontSize: 22,
+    fontWeight: '500',
+    color: '#3C5A49',
+    letterSpacing: 0.5,
+  },
+  editIcon: {
+    marginLeft: 8,
+    opacity: 0.5,
+  },
+  nameEditContainer: {
+    backgroundColor: '#E7F3EC',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+  },
+  nameInput: {
+    fontSize: 22,
+    fontWeight: '500',
+    color: '#3C5A49',
+    textAlign: 'center',
+    minWidth: 140,
+    letterSpacing: 0.5,
+  },
+  petContainer: {
+    alignItems: 'center',
+  },
+
+  /* Bottom Actions */
+  bottomActions: {
+    paddingBottom: 44,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  focusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6FAF8A',
+    borderRadius: 18,
+    paddingVertical: 16,
+    width: BUTTON_WIDTH,
+    gap: 10,
+    borderWidth: 2,
+    borderColor: '#5A9A75',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  focusButtonText: {
+    color: 'white',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  iconButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: BUTTON_WIDTH,
+    marginTop: 20,
+  },
+  iconButton: {
+    alignItems: 'center',
+  },
+  iconButtonImage: {
+    width: 36,
+    height: 36,
+    tintColor: '#3C5A49',
+  },
+  iconButtonInner: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#E7F3EC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  iconButtonDisabled: {
     opacity: 0.6,
   },
-  feedButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 6,
+  iconButtonLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#6B7D73',
+    marginTop: 6,
+    letterSpacing: 0.3,
   },
-  button: {
-    backgroundColor: "#6FAF8A",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 999,
-    width: "100%",
-    maxWidth: 340,
-    alignItems: "center",
-    marginBottom: 12,
+  iconButtonLabelDisabled: {
+    color: '#B8C9BD',
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+  foodIconContainer: {
+    position: 'relative',
+  },
+  foodBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -12,
+    backgroundColor: '#FF6B35',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    borderWidth: 1.5,
+    borderColor: '#E55A28',
+  },
+  foodBadgeDisabled: {
+    backgroundColor: '#B8C9BD',
+    borderColor: '#A0B5A8',
+  },
+  foodBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  /* Dev Button */
+  devButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    backgroundColor: '#8B5CF6',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#7C4FE0',
+  },
+  devButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 
   /* Dev Modal */
   devModalOverlay: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: 'rgba(60, 90, 73, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 20,
   },
   devModal: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 20,
-    width: "100%",
+    backgroundColor: '#F6FAF7',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
     maxWidth: 320,
-    maxHeight: "80%",
+    borderWidth: 2,
+    borderColor: '#D4E5DA',
+    shadowColor: '#3C5A49',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
   devModalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#D4E5DA',
   },
   devModalTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#3C5A49",
+    fontWeight: '600',
+    color: '#3C5A49',
+    letterSpacing: 0.3,
   },
   devModalSection: {
     marginBottom: 20,
   },
   devModalSectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3C5A49",
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7D73',
+    marginBottom: 10,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   devButtonRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 8,
-    flexWrap: "wrap",
+    flexWrap: 'wrap',
   },
   devButtonSmall: {
-    backgroundColor: "#E7F3EC",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: 40,
-    alignItems: "center",
+    backgroundColor: '#E7F3EC',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    minWidth: 42,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
+  },
+  devButtonActive: {
+    backgroundColor: '#6FAF8A',
+    borderColor: '#5A9A75',
   },
   devButtonTextSmall: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#3C5A49",
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#3C5A49',
   },
-  devHint: {
-    fontSize: 12,
-    color: "#6B7D73",
-    lineHeight: 16,
-  },
+  coinIcon: { width: 16, height: 16, borderRadius: 8 },
 });
