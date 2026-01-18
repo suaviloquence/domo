@@ -33,49 +33,65 @@ export default function CompletionScreen({
     addCoins,
     setTotalFocusSeconds,
     addJournalEntry,
+    streak,
+    completeFocusSession,
+    checkAndDepleteHunger,
   } = usePet();
 
   // Get data from route params
   const timeSpent = route?.params?.timeSpent || 25 * 60; // seconds
   const goal = route?.params?.goal || '';
-  const streakExtended = route?.params?.streakExtended || false;
   const startTime = route?.params?.startTime || Date.now() - timeSpent * 1000; // timestamp in milliseconds
+  
+  // Track if streak was extended
+  const [streakExtended, setStreakExtended] = useState(false);
 
   // Use a ref to track which timeSpent we've already processed
   const processedTimeSpentRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Only process if this is a new session (different timeSpent)
-    if (processedTimeSpentRef.current === timeSpent) {
-      return;
-    }
-    processedTimeSpentRef.current = timeSpent;
+    (async () => {
+      // Only process if this is a new session (different timeSpent)
+      if (processedTimeSpentRef.current === timeSpent) {
+        return;
+      }
+      processedTimeSpentRef.current = timeSpent;
 
-    // Capture current values at the time of processing
-    const currentTotalSeconds = totalFocusSeconds;
-    const currentCoinsEarned = coinsEarnedFromFocus;
-    const currentFoodEarned = foodEarnedFromFocus;
-    const currentFood = food;
+      // Capture current values at the time of processing
+      const currentTotalSeconds = totalFocusSeconds;
+      const currentCoinsEarned = coinsEarnedFromFocus;
+      const currentFoodEarned = foodEarnedFromFocus;
+      const currentFood = food;
 
-    const newTotalSeconds = currentTotalSeconds + timeSpent;
+      const newTotalSeconds = currentTotalSeconds + timeSpent;
 
-    const { coinsShouldHave, foodShouldHave } =
-      calculateFocusRewards(newTotalSeconds);
+      const { coinsShouldHave, foodShouldHave } =
+        calculateFocusRewards(newTotalSeconds);
 
-    const coinsToGrant = coinsShouldHave - currentCoinsEarned;
-    const foodToGrant = foodShouldHave - currentFoodEarned;
+      const coinsToGrant = coinsShouldHave - currentCoinsEarned;
+      const foodToGrant = foodShouldHave - currentFoodEarned;
 
-    if (coinsToGrant > 0 || foodToGrant > 0) {
-      setCoinsEarnedFromFocus(currentCoinsEarned + coinsToGrant);
-      setFood(currentFood + foodToGrant);
-      setFoodEarnedFromFocus(currentFoodEarned + foodToGrant);
-    }
-    setTotalFocusSeconds(newTotalSeconds);
+      if (coinsToGrant > 0 || foodToGrant > 0) {
+        setCoinsEarnedFromFocus(currentCoinsEarned + coinsToGrant);
+        setFood(currentFood + foodToGrant);
+        setFoodEarnedFromFocus(currentFoodEarned + foodToGrant);
+      }
+      setTotalFocusSeconds(newTotalSeconds);
+      
+      // Update streak
+      const previousStreak = streak;
+      await completeFocusSession();
+      setStreakExtended(streak > previousStreak);
+      
+      // Check and deplete hunger
+      await checkAndDepleteHunger();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeSpent]); // Only depend on timeSpent to detect new sessions
 
-  // Calculate rewards
-  const { coinsShouldHave, foodShouldHave } = calculateFocusRewards(timeSpent);
+  // Calculate rewards for display (using total accumulated time)
+  const newTotalSeconds = totalFocusSeconds + timeSpent;
+  const { coinsShouldHave, foodShouldHave } = calculateFocusRewards(newTotalSeconds);
   const foodReward = foodShouldHave - foodEarnedFromFocus;
   const coinReward = coinsShouldHave - coinsEarnedFromFocus;
 

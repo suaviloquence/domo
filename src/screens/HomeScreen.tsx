@@ -16,9 +16,10 @@ import PetDisplay from '../components/PetDisplay';
 const NAME_KEY = 'petName';
 
 export default function HomeScreen({ navigation }: any) {
-  const { selectedPetId, resetPet, coins, streak, addCoins, food, setFood } = usePet();
+  const { selectedPetId, resetPet, coins, streak, addCoins, food, setFood, hunger, setHunger, checkAndDepleteHunger } = usePet();
 
   const [timerModalVisible, setTimerModalVisible] = useState(false);
+  const [devMenuVisible, setDevMenuVisible] = useState(false);
 
   // editable name
   const [petName, setPetName] = useState('focus pal');
@@ -28,6 +29,8 @@ export default function HomeScreen({ navigation }: any) {
     (async () => {
       const savedName = await AsyncStorage.getItem(NAME_KEY);
       if (savedName) setPetName(savedName);
+      // Check and deplete hunger on app start
+      await checkAndDepleteHunger();
     })();
   }, []);
 
@@ -39,8 +42,9 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleFeed = async () => {
-    if (food > 0) {
+    if (food > 0 && hunger < 5) {
       await setFood(food - 1);
+      await setHunger(Math.min(5, hunger + 1));
       // You could add visual feedback here (animation, sound, etc.)
     }
   };
@@ -57,14 +61,21 @@ export default function HomeScreen({ navigation }: any) {
           <MaterialIcons name="menu-book" size={22} color="#3C5A49" />
         </TouchableOpacity>
 
-        {/* Center: Food + Coins + Streak */}
+        {/* Center: Hunger + Coins + Streak */}
         <View style={styles.centerStatus}>
           <View style={styles.statusRowBig}>
             <MaterialIcons name="restaurant" size={16} color="#3C5A49" />
-            <View style={styles.foodMeterContainer}>
-              <View style={[styles.foodMeterFill, { width: `${Math.min((food / 100) * 100, 100)}%` }]} />
+            <View style={styles.hungerMeterContainer}>
+              {[1, 2, 3, 4, 5].map((segment) => (
+                <View
+                  key={segment}
+                  style={[
+                    styles.hungerSegment,
+                    segment <= hunger ? styles.hungerSegmentFull : styles.hungerSegmentEmpty
+                  ]}
+                />
+              ))}
             </View>
-            <Text style={styles.foodAmount}>{food}</Text>
 
             <MaterialIcons name="monetization-on" size={16} color="#3C5A49" style={styles.statusIconSpacing} />
             <Text style={styles.statusTextBig}>{coins}</Text>
@@ -111,14 +122,16 @@ export default function HomeScreen({ navigation }: any) {
       {/* Pet Card */}
       <View style={styles.card}>
         <PetDisplay selectedPetId={selectedPetId} size={220} />
-        <Text style={styles.caption}>your pet grows when you lock in</Text>
+        <Text style={styles.caption}>
+          {hunger <= 2 ? "your pet is hungry..." : "your pet grows when you lock in"}
+        </Text>
       </View>
 
       {/* Feed Button */}
       <TouchableOpacity
-        style={[styles.feedButton, food === 0 && styles.feedButtonDisabled]}
+        style={[styles.feedButton, (food === 0 || hunger >= 5) && styles.feedButtonDisabled]}
         onPress={handleFeed}
-        disabled={food === 0}
+        disabled={food === 0 || hunger >= 5}
       >
         <MaterialIcons name="restaurant-menu" size={18} color="white" />
         <Text style={styles.feedButtonText}>Feed Pet (1 food)</Text>
@@ -139,28 +152,14 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.buttonText}>closet</Text>
       </TouchableOpacity>
 
-      {/* Dev buttons */}
       {__DEV__ && (
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#999', marginTop: 12 }]}
-          onPress={resetPet}
+          style={[styles.button, { backgroundColor: '#8B5CF6' }]}
+          onPress={() => setDevMenuVisible(true)}
         >
-          <Text style={styles.buttonText}>dev: reset pet</Text>
+          <Text style={styles.buttonText}>dev: state menu</Text>
         </TouchableOpacity>
       )}
-
-      {__DEV__ && (
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#3C5A49' }]}
-          onPress={() => addCoins(50)}
-        >
-          <Text style={styles.buttonText}>dev: +50 coins</Text>
-        </TouchableOpacity>
-      )}
-
-      <Text style={styles.footer}>
-        coins: {coins} • streak: {streak}
-      </Text>
 
       {/* Timer Modal */}
       <TimerModal
@@ -174,6 +173,96 @@ export default function HomeScreen({ navigation }: any) {
         }}
         onCancel={() => setTimerModalVisible(false)}
       />
+
+      {/* Dev Menu Modal */}
+      {__DEV__ && (
+        <View style={[styles.devModalOverlay, { display: devMenuVisible ? 'flex' : 'none' }]}>
+          <View style={styles.devModal}>
+            <View style={styles.devModalHeader}>
+              <Text style={styles.devModalTitle}>Dev State Menu</Text>
+              <TouchableOpacity onPress={() => setDevMenuVisible(false)}>
+                <MaterialIcons name="close" size={24} color="#3C5A49" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.devModalSection}>
+              <Text style={styles.devModalSectionTitle}>Hunger</Text>
+              <View style={styles.devButtonRow}>
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <TouchableOpacity
+                    key={level}
+                    style={[styles.devButtonSmall, hunger === level && styles.devButtonActive]}
+                    onPress={() => setHunger(level)}
+                  >
+                    <Text style={styles.devButtonTextSmall}>{level}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.devModalSection}>
+              <Text style={styles.devModalSectionTitle}>Food</Text>
+              <View style={styles.devButtonRow}>
+                <TouchableOpacity
+                  style={styles.devButtonSmall}
+                  onPress={() => setFood(0)}
+                >
+                  <Text style={styles.devButtonTextSmall}>0</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.devButtonSmall}
+                  onPress={() => setFood(10)}
+                >
+                  <Text style={styles.devButtonTextSmall}>10</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.devButtonSmall}
+                  onPress={() => setFood(50)}
+                >
+                  <Text style={styles.devButtonTextSmall}>50</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.devModalSection}>
+              <Text style={styles.devModalSectionTitle}>Coins</Text>
+              <View style={styles.devButtonRow}>
+                <TouchableOpacity
+                  style={styles.devButtonSmall}
+                  onPress={() => addCoins(-50)}
+                >
+                  <Text style={styles.devButtonTextSmall}>-50</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.devButtonSmall}
+                  onPress={() => addCoins(100)}
+                >
+                  <Text style={styles.devButtonTextSmall}>+100</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.devButtonSmall}
+                  onPress={() => addCoins(500)}
+                >
+                  <Text style={styles.devButtonTextSmall}>+500</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.devModalSection}>
+              <Text style={styles.devModalSectionTitle}>Actions</Text>
+              <TouchableOpacity
+                style={[styles.devButton, { backgroundColor: '#EF4444' }]}
+                onPress={async () => {
+                  await checkAndDepleteHunger();
+                  setDevMenuVisible(false);
+                }}
+              >
+                <Text style={styles.devButtonText}>Deplete Hunger Daily</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -246,6 +335,24 @@ const styles = StyleSheet.create({
     color: '#3C5A49',
     marginLeft: 4,
     minWidth: 30,
+  },
+
+  hungerMeterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4,
+    gap: 2,
+  },
+  hungerSegment: {
+    width: 12,
+    height: 10,
+    borderRadius: 2,
+  },
+  hungerSegmentFull: {
+    backgroundColor: '#FF6B35',
+  },
+  hungerSegmentEmpty: {
+    backgroundColor: '#DCE8E1',
   },
 
   /* Title / name */
@@ -335,5 +442,80 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7D73',
     marginTop: 8,
+  },
+
+  /* Dev Modal */
+  devModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  devModal: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 320,
+    maxHeight: '80%',
+  },
+  devModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  devModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3C5A49',
+  },
+  devModalSection: {
+    marginBottom: 20,
+  },
+  devModalSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3C5A49',
+    marginBottom: 8,
+  },
+  devButtonRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  devButtonSmall: {
+    backgroundColor: '#E7F3EC',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  devButtonActive: {
+    backgroundColor: '#6FAF8A',
+  },
+  devButtonTextSmall: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3C5A49',
+  },
+  devButton: {
+    backgroundColor: '#6FAF8A',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+  },
+  devButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

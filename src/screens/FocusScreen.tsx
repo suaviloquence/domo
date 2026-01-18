@@ -112,10 +112,9 @@ export default function FocusScreen({ route }: any) {
       setIsRunning(false);
 
       // Navigate to CompletionScreen
-      navigation.navigate('Completion', {
+      (navigation as any).navigate('Completion', {
         timeSpent: initialSeconds, // full session time
         goal,
-        streakExtended: true, // replace with real streak logic
         startTime: sessionStartTime || Date.now() - initialSeconds * 1000, // fallback to calculated time
       });
     }
