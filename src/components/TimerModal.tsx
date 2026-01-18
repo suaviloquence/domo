@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 
 // Pastel latte palette
@@ -38,11 +39,11 @@ const TimerModal: FC<TimerModalProps> = ({ visible, onStart, onCancel }) => {
     const mins = parseInt(minutes, 10) || 0;
     const secs = parseInt(seconds, 10) || 0;
     if ((mins === 0 && secs === 0) || secs > 59 || mins < 0 || secs < 0) {
-      alert('Please enter a valid time (MM:SS, 0–59 seconds).');
+      Alert.alert('Please enter a valid time (MM:SS, 0–59 seconds).');
       return;
     }
     if (!goal.trim()) {
-      alert('Please enter a goal.');
+      Alert.alert('Please enter a goal.');
       return;
     }
     onStart(mins, secs, goal.trim());

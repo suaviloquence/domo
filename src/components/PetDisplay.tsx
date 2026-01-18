@@ -1,49 +1,47 @@
 import React from "react";
-import { Image, Text, StyleSheet, ImageStyle, TextStyle } from "react-native";
+import { View, Image, StyleSheet } from "react-native";
 import { PetId, usePet } from "../context/PetContext";
+import { ITEMS, ItemId } from "../data/items";
 
-const PET_IMAGES: Record<PetId, any> = {
-  Rugy: require("../assets/RUGY.png"),
+const baseImgs: Record<PetId, any> = {
   Strawb: require("../assets/STRAWB.png"),
+  Rugy: require("../assets/RUGY.png"),
   Ceviche: require("../assets/CEVICHE.png"),
 };
 
-type PetDisplayProps = {
-  // Optional: if not provided, we’ll use context
-  selectedPetId?: PetId | null;
-  size?: number;
-  imageStyle?: ImageStyle;
-  emojiStyle?: TextStyle;
-};
+function findItemImg(itemId?: ItemId) {
+  return ITEMS.find((it) => it.id === itemId)?.img;
+}
 
 export default function PetDisplay({
   selectedPetId,
-  size = 256,
-  imageStyle,
-  emojiStyle,
-}: PetDisplayProps) {
-  const ctx = usePet();
-  const petId = selectedPetId ?? ctx.selectedPetId;
+  size = 220,
+}: {
+  selectedPetId: PetId | null;
+  size?: number;
+}) {
+  const { equippedByPet } = usePet();
+  if (!selectedPetId) return null;
 
-  if (petId) {
-    return (
-      <Image
-        source={PET_IMAGES[petId]}
-        style={[styles.petImage, { width: size, height: size }, imageStyle]}
-        resizeMode="contain"
-        accessibilityLabel="Your pet"
-      />
-    );
-  }
+  const eq = equippedByPet[selectedPetId] || {};
 
   return (
-    <Text style={[styles.petEmoji, emojiStyle]} accessibilityLabel="Egg pet">
-      🐣
-    </Text>
+    <View style={[styles.wrap, { width: size, height: size }]}>
+      <Image source={baseImgs[selectedPetId]} style={styles.layer} />
+
+      {eq.shoes && <Image source={findItemImg(eq.shoes)} style={styles.layer} />}
+      {eq.hat && <Image source={findItemImg(eq.hat)} style={styles.layer} />}
+      {eq.glasses && <Image source={findItemImg(eq.glasses)} style={styles.layer} />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  petEmoji: { fontSize: 64 },
-  petImage: { width: 256, height: 256 },
+  wrap: { position: "relative" },
+  layer: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
+  },
 });

@@ -10,6 +10,8 @@ import FocusScreen from './src/screens/FocusScreen';
 import ShopScreen from './src/screens/ShopScreen';
 
 import { PetProvider, usePet } from './src/context/PetContext';
+import JournalScreen from './src/screens/JournalScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +32,7 @@ function RootNavigator() {
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Focus" component={FocusScreen} />
       <Stack.Screen name="Shop" component={ShopScreen} />
+      <Stack.Screen name="Journal" component={JournalScreen} />
     </Stack.Navigator>
   );
 }
