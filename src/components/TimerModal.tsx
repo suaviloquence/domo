@@ -12,17 +12,16 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-// Pastel latte palette
-const palette = {
-  base: '#FFF7ED', // Latte base
-  pink: '#FFD6EC', // Accent, buttons, highlights
-  yellow: '#FFFACD', // Journal button, icons
-  blue: '#D6F0FF', // Info, secondary backgrounds
-  green: '#DFFFE0', // Success, hunger meter
-  purple: '#E6E6FF', // Happiness meter, accents
-  orange: '#FFE5B4', // Food meter
-  brown: '#EAD7C2', // Borders, text, latte accent
-  gray: '#F3F3F3', // Card backgrounds, containers
+// App theme colors matching the rest of the app
+const theme = {
+  primary: '#6FAF8A', // Primary green for buttons, accents
+  primaryDark: '#5A9A75', // Darker green for borders
+  background: '#F6FAF7', // Main background
+  cardBackground: '#E7F3EC', // Card/container backgrounds
+  border: '#D4E5DA', // Borders
+  textPrimary: '#3C5A49', // Primary text
+  textSecondary: '#6B7D73', // Secondary text
+  white: '#FFFFFF', // White text
 };
 
 interface TimerModalProps {
@@ -67,7 +66,7 @@ const TimerModal: FC<TimerModalProps> = ({ visible, onStart, onCancel }) => {
         style={styles.centeredView}
       >
         <View style={styles.modalView}>
-          <MaterialIcons name="timer" size={44} color={palette.pink} />
+          <MaterialIcons name="timer" size={44} color={theme.primary} />
           <Text style={styles.modalTitle}>Set a Timer</Text>
           <View style={styles.timeRow}>
             <View style={styles.timeInputContainer}>
@@ -78,7 +77,7 @@ const TimerModal: FC<TimerModalProps> = ({ visible, onStart, onCancel }) => {
                 value={minutes}
                 onChangeText={setMinutes}
                 maxLength={2}
-                placeholderTextColor={palette.brown}
+                placeholderTextColor={theme.textSecondary}
               />
               <Text style={styles.timeLabel}>min</Text>
             </View>
@@ -91,7 +90,7 @@ const TimerModal: FC<TimerModalProps> = ({ visible, onStart, onCancel }) => {
                 value={seconds}
                 onChangeText={setSeconds}
                 maxLength={2}
-                placeholderTextColor={palette.brown}
+                placeholderTextColor={theme.textSecondary}
               />
               <Text style={styles.timeLabel}>sec</Text>
             </View>
@@ -103,7 +102,7 @@ const TimerModal: FC<TimerModalProps> = ({ visible, onStart, onCancel }) => {
             onChangeText={setGoal}
             multiline
             maxLength={80}
-            placeholderTextColor={palette.brown}
+            placeholderTextColor={theme.textSecondary}
           />
           <View style={styles.buttonsRow}>
             <TouchableOpacity
@@ -131,28 +130,28 @@ const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(60, 90, 73, 0.4)',
     paddingHorizontal: 20,
   },
   modalView: {
-    backgroundColor: palette.base,
+    backgroundColor: theme.cardBackground,
     borderRadius: 20,
     padding: 28,
     elevation: 8,
     alignItems: 'center',
-    shadowColor: palette.pink,
+    shadowColor: theme.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
     borderWidth: 2,
-    borderColor: palette.brown,
+    borderColor: theme.border,
   },
   modalTitle: {
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 18,
     textAlign: 'center',
-    color: palette.pink,
+    color: theme.primary,
   },
   timeRow: {
     flexDirection: 'row',
@@ -163,30 +162,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timeInput: {
-    borderColor: palette.pink,
+    borderColor: theme.primary,
     borderWidth: 2,
     borderRadius: 10,
     padding: 8,
     width: 48,
     fontSize: 20,
     textAlign: 'center',
-    backgroundColor: palette.yellow,
+    backgroundColor: theme.background,
     marginBottom: 2,
-    color: palette.brown,
+    color: theme.textPrimary,
   },
   timeLabel: {
     fontSize: 12,
-    color: palette.brown,
+    color: theme.textPrimary,
     marginTop: -2,
   },
   colon: {
     fontSize: 28,
     fontWeight: 'bold',
     marginHorizontal: 6,
-    color: palette.pink,
+    color: theme.primary,
   },
   goalInput: {
-    borderColor: palette.pink,
+    borderColor: theme.primary,
     borderWidth: 1.5,
     borderRadius: 12,
     padding: 12,
@@ -194,9 +193,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 48,
     width: 220,
-    backgroundColor: palette.gray,
+    backgroundColor: theme.cardBackground,
     textAlignVertical: 'top',
-    color: palette.brown,
+    color: theme.textPrimary,
   },
   buttonsRow: {
     flexDirection: 'row',
@@ -205,24 +204,28 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   cancelButton: {
-    backgroundColor: palette.brown,
+    backgroundColor: theme.textSecondary,
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 12,
     flex: 1,
     marginRight: 10,
     elevation: 2,
+    borderWidth: 1.5,
+    borderColor: '#5A6B63',
   },
   startButton: {
-    backgroundColor: palette.pink,
+    backgroundColor: theme.primary,
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 12,
     flex: 1,
     elevation: 2,
+    borderWidth: 2,
+    borderColor: theme.primaryDark,
   },
   buttonText: {
-    color: palette.base,
+    color: theme.white,
     fontWeight: '700',
     textAlign: 'center',
     fontSize: 16,

@@ -18,6 +18,8 @@ import HungerBar from '../components/HungerBar';
 
 const coinIcon = require('../assets/coin.png');
 const journalIcon = require('../assets/journal.png');
+const closetIcon = require('../assets/closet.png');
+const foodIcon = require('../assets/food.png');
 
 const NAME_KEY = 'petName';
 const BUTTON_WIDTH = 300;
@@ -67,12 +69,16 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.statusPill}>
           {/* Left: Hunger */}
           <View style={styles.hungerSection}>
-            <HungerBar hunger={hunger} width={120} height={30} />
+            <HungerBar hunger={hunger} width={200} height={50} />
           </View>
 
           {/* Right: Coins & Streak with accent border */}
           <View style={styles.statsSection}>
-            <Image source={coinIcon} style={styles.coinIcon} />
+            <Image
+              source={coinIcon}
+              style={styles.coinIcon}
+              resizeMode="contain"
+            />
             <Text style={styles.statText}>{coins}</Text>
             <View style={styles.statDivider} />
             <MaterialIcons
@@ -144,7 +150,11 @@ export default function HomeScreen({ navigation }: any) {
             activeOpacity={0.7}
           >
             <View style={styles.iconButtonInner}>
-              <Image source={journalIcon} style={styles.iconButtonImage} />
+              <Image
+                source={journalIcon}
+                style={styles.iconButtonImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.iconButtonLabel}>journal</Text>
           </TouchableOpacity>
@@ -160,10 +170,10 @@ export default function HomeScreen({ navigation }: any) {
           >
             <View style={styles.iconButtonInner}>
               <View style={styles.foodIconContainer}>
-                <MaterialIcons
-                  name="restaurant-menu"
-                  size={22}
-                  color={food <= 0 || hunger >= 5 ? '#B8C9BD' : '#3C5A49'}
+                <Image
+                  source={foodIcon}
+                  style={styles.iconButtonImage}
+                  resizeMode="contain"
                 />
                 <View
                   style={[
@@ -191,7 +201,12 @@ export default function HomeScreen({ navigation }: any) {
             activeOpacity={0.7}
           >
             <View style={styles.iconButtonInner}>
-              <MaterialIcons name="checkroom" size={22} color="#3C5A49" />
+              <Image
+                source={closetIcon}
+                style={styles.iconButtonImage}
+                resizeMode="contain"
+                renderingMode="original"
+              />
             </View>
             <Text style={styles.iconButtonLabel}>closet</Text>
           </TouchableOpacity>
@@ -290,7 +305,7 @@ const styles = StyleSheet.create({
   /* Top Status Bar */
   topBar: {
     paddingTop: 60,
-    paddingHorizontal: 20,
+    // paddingHorizontal: 20,
     alignItems: 'center',
   },
   statusPill: {
@@ -299,7 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E7F3EC',
     borderRadius: 20,
     paddingVertical: 12,
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
     borderWidth: 1.5,
     borderColor: '#D4E5DA',
     shadowColor: '#3C5A49',
@@ -423,6 +438,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     tintColor: '#3C5A49',
+    // tintColor: '#00000000', // transparent but blocks inherited tint
   },
   iconButtonInner: {
     width: 52,
@@ -438,6 +454,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+    tintColor: null,
+    opacity: 0.99,
   },
   iconButtonDisabled: {
     opacity: 0.6,
@@ -459,7 +477,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -8,
     right: -12,
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#3C5A49',
+    borderColor: '#A0B5A8',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -467,7 +486,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 5,
     borderWidth: 1.5,
-    borderColor: '#E55A28',
   },
   foodBadgeDisabled: {
     backgroundColor: '#B8C9BD',

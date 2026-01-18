@@ -43,18 +43,32 @@ export default function PetDisplay({
 
   return (
     <View style={[styles.wrap, { width: size, height: size }, imageStyle]}>
-      <Image
-        source={baseImg}
-        style={styles.layer}
-        accessibilityLabel={isSad ? 'Your sad pet' : 'Your pet'}
-      />
+      {!isSad ? (
+        <>
+          {!eq && (
+            <Image
+              source={baseImg}
+              style={styles.layer}
+              accessibilityLabel="Your pet"
+            />
+          )}
 
-      {eq.shoes && (
-        <Image source={findItemImg(eq.shoes)} style={styles.layer} />
-      )}
-      {eq.hat && <Image source={findItemImg(eq.hat)} style={styles.layer} />}
-      {eq.glasses && (
-        <Image source={findItemImg(eq.glasses)} style={styles.layer} />
+          {eq.shoes && (
+            <Image source={findItemImg(eq.shoes)} style={styles.layer} />
+          )}
+          {eq.hat && (
+            <Image source={findItemImg(eq.hat)} style={styles.layer} />
+          )}
+          {eq.glasses && (
+            <Image source={findItemImg(eq.glasses)} style={styles.layer} />
+          )}
+        </>
+      ) : (
+        <Image
+          source={baseImg}
+          style={styles.layer}
+          accessibilityLabel={'Your sad pet'}
+        />
       )}
     </View>
   );
