@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 // Pastel latte palette
 const palette = {
@@ -66,7 +67,7 @@ const TimerModal: FC<TimerModalProps> = ({ visible, onStart, onCancel }) => {
         style={styles.centeredView}
       >
         <View style={styles.modalView}>
-          <Text style={styles.emoji}>⏱️</Text>
+          <MaterialIcons name="timer" size={44} color={palette.pink} />
           <Text style={styles.modalTitle}>Set a Timer</Text>
           <View style={styles.timeRow}>
             <View style={styles.timeInputContainer}>
@@ -145,10 +146,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     borderWidth: 2,
     borderColor: palette.brown,
-  },
-  emoji: {
-    fontSize: 44,
-    marginBottom: 8,
   },
   modalTitle: {
     fontSize: 22,

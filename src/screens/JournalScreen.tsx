@@ -1,225 +1,330 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
-  TextInput,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { usePet, JournalEntry } from '../context/PetContext';
 
-type JournalEntry = {
-  id: string;
-  text: string;
-  createdAt: number;
+interface JournalScreenProps {
+  navigation: any;
+}
+
+type GroupedEntries = {
+  [date: string]: JournalEntry[];
 };
 
-const JOURNAL_KEY = 'journalEntries_v1';
-
-export default function JournalScreen({ navigation }: any) {
-  const [text, setText] = useState('');
+export default function JournalScreen({ navigation }: JournalScreenProps) {
+  const { getJournalEntries } = usePet();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [groupedEntries, setGroupedEntries] = useState<GroupedEntries>({});
 
   useEffect(() => {
-    (async () => {
-      const raw = await AsyncStorage.getItem(JOURNAL_KEY);
-      if (raw) setEntries(JSON.parse(raw));
-    })();
+    loadEntries();
   }, []);
 
-  const saveEntries = async (next: JournalEntry[]) => {
-    setEntries(next);
-    await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(next));
+  // Reload entries when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadEntries();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadEntries = async () => {
+    const journalEntries = await getJournalEntries();
+    setEntries(journalEntries);
+
+    // Group entries by date
+    const grouped: GroupedEntries = {};
+    journalEntries.forEach((entry) => {
+      const date = new Date(entry.startTime);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(entry);
+    });
+
+    // Sort entries within each day by start time (newest first)
+    Object.keys(grouped).forEach((date) => {
+      grouped[date].sort((a, b) => b.startTime - a.startTime);
+    });
+
+    setGroupedEntries(grouped);
   };
 
-  const onAdd = async () => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString + 'T00:00:00');
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    const newEntry: JournalEntry = {
-      id: String(Date.now()),
-      text: trimmed,
-      createdAt: Date.now(),
-    };
-
-    const next = [newEntry, ...entries];
-    setText('');
-    await saveEntries(next);
-  };
-
-  const onDelete = async (id: string) => {
-    const next = entries.filter((e) => e.id !== id);
-    await saveEntries(next);
-  };
-
-  const prettyDate = useMemo(() => {
-    return (ms: number) =>
-      new Date(ms).toLocaleString(undefined, {
-        month: 'short',
+    if (dateString === today.toISOString().split('T')[0]) {
+      return 'Today';
+    } else if (dateString === yesterday.toISOString().split('T')[0]) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
         day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
+        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
       });
-  }, []);
+    }
+  };
+
+  const formatTime = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  const renderStars = (stars: number) => {
+    return (
+      <View style={styles.starsContainer}>
+        {[1, 2, 3, 4, 5].map((index) => (
+          <MaterialIcons
+            key={index}
+            name={index <= stars ? 'star' : 'star-border'}
+            size={18}
+            color={index <= stars ? '#FFB800' : '#CCC'}
+            style={styles.starIcon}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const sortedDates = Object.keys(groupedEntries).sort((a, b) => {
+    // Sort dates descending (newest first)
+    return b.localeCompare(a);
+  });
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-            <Text style={styles.icon}>←</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>journal</Text>
-
-          <View style={styles.iconBtn} />
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialIcons name="arrow-back" size={20} color="#6FAF8A" />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <MaterialIcons name="menu-book" size={24} color="#3C5A49" style={styles.headerIcon} />
+          <Text style={styles.headerTitle}>Journal</Text>
         </View>
-
-        {/* Composer */}
-        <View style={styles.composer}>
-            <Text style={styles.prompt}>quick note</Text>
-            <Text style={styles.subPrompt}>optional — write anything you want 🌿</Text>
-
-
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder="today i..."
-            placeholderTextColor="#8AA197"
-            style={styles.input}
-            multiline
-          />
-
-          <TouchableOpacity style={styles.addBtn} onPress={onAdd}>
-            <Text style={styles.addBtnText}>save</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Entries */}
-        <FlatList
-          contentContainerStyle={{ paddingBottom: 24 }}
-          data={entries}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>no entries yet</Text>
-              <Text style={styles.emptySub}>
-                write your first note so future-you can smile 🫶
-              </Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <View style={styles.entryCard}>
-              <Text style={styles.entryDate}>{prettyDate(item.createdAt)}</Text>
-              <Text style={styles.entryText}>{item.text}</Text>
-
-              <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteBtn}>
-                <Text style={styles.deleteText}>delete</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
+        <View style={styles.headerSpacer} />
       </View>
-    </KeyboardAvoidingView>
+
+      {/* Journal Entries */}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {sortedDates.length === 0 ? (
+          <View style={styles.emptyState}>
+            <MaterialIcons name="description" size={64} color="#CCC" />
+            <Text style={styles.emptyStateText}>
+              No journal entries yet.{'\n'}Complete a focus session and reflect
+              to see your entries here!
+            </Text>
+          </View>
+        ) : (
+          sortedDates.map((dateKey) => (
+            <View key={dateKey} style={styles.daySection}>
+              <Text style={styles.dayHeader}>{formatDate(dateKey)}</Text>
+              {groupedEntries[dateKey].map((entry) => (
+                <View key={entry.id} style={styles.entryCard}>
+                  <View style={styles.entryHeader}>
+                    <View style={styles.entryTimeRow}>
+                      <Text style={styles.entryTime}>
+                        {formatTime(entry.startTime)}
+                      </Text>
+                      <Text style={styles.entryDuration}>
+                        {formatDuration(entry.duration)}
+                      </Text>
+                    </View>
+                    {renderStars(entry.stars)}
+                  </View>
+
+                  {entry.goal && (
+                    <View style={styles.entryGoalContainer}>
+                      <MaterialIcons name="flag" size={16} color="#3C5A49" />
+                      <Text style={styles.entryGoal}>{entry.goal}</Text>
+                    </View>
+                  )}
+
+                  {entry.reflection && (
+                    <View style={styles.reflectionContainer}>
+                      <Text style={styles.reflectionLabel}>Reflection:</Text>
+                      <Text style={styles.reflectionText}>
+                        {entry.reflection}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
-const BG = '#F6FAF7';
-const CARD = '#E7F3EC';
-const GREEN = '#3C5A49';
-const GREEN_MID = '#5E8768';
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 80 },
-
+  container: {
+    flex: 1,
+    backgroundColor: '#F6FAF7',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: '#F6FAF7',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#6FAF8A',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginRight: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: GREEN,
-    textTransform: 'lowercase',
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: CARD,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: { fontSize: 18, color: GREEN, fontWeight: '800' },
-
-  composer: {
-    backgroundColor: CARD,
-    borderRadius: 22,
-    padding: 16,
-    gap: 10,
-    marginBottom: 14,
-  },
-  prompt: {
-    fontSize: 14,
+    fontSize: 24,
     fontWeight: '700',
-    color: GREEN,
+    color: '#3C5A49',
   },
-  input: {
-    minHeight: 90,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: GREEN,
+  headerSpacer: {
+    width: 60,
   },
-  addBtn: {
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: '#6FAF8A',
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 80,
   },
-  addBtnText: { color: 'white', fontSize: 14, fontWeight: '800' },
-
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  daySection: {
+    marginBottom: 32,
+  },
+  dayHeader: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#3C5A49',
+    marginBottom: 16,
+  },
   entryCard: {
-    backgroundColor: CARD,
-    borderRadius: 22,
-    padding: 14,
-    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#6FAF8A',
   },
-  entryDate: {
-    fontSize: 12,
-    color: GREEN_MID,
-    marginBottom: 6,
+  entryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  entryTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  entryTime: {
+    fontSize: 16,
     fontWeight: '600',
+    color: '#3C5A49',
+    marginRight: 8,
   },
-  entryText: {
+  entryDuration: {
     fontSize: 14,
-    color: GREEN,
-    lineHeight: 20,
-    fontWeight: '600',
+    color: '#666',
   },
-  subPrompt: {
-    fontSize: 12,
-    color: GREEN_MID,
-    marginTop: -6,
+  starsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  starIcon: {
+    marginLeft: 2,
+  },
+  entryGoalContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  entryGoal: {
+    fontSize: 15,
+    color: '#3C5A49',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  reflectionContainer: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  reflectionLabel: {
+    fontSize: 13,
     fontWeight: '600',
-  },  
-  deleteBtn: { marginTop: 10, alignSelf: 'flex-start' },
-  deleteText: { color: '#7B8E85', fontSize: 12, fontWeight: '700' },
-
-  empty: { paddingTop: 30, alignItems: 'center' },
-  emptyTitle: { color: GREEN, fontWeight: '800', fontSize: 16 },
-  emptySub: { color: GREEN_MID, marginTop: 6, textAlign: 'center' },
+    color: '#666',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  reflectionText: {
+    fontSize: 14,
+    color: '#3C5A49',
+    lineHeight: 20,
+  },
 });
