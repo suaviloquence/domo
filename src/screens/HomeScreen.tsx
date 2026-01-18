@@ -1,52 +1,62 @@
-import React, { useEffect, useState } from 'react';
+// src/screens/HomeScreen.tsx
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-} from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+} from "react-native";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { usePet } from '../context/PetContext';
-import TimerModal from '../components/TimerModal';
-import PetDisplay from '../components/PetDisplay';
+import { usePet } from "../context/PetContext";
+import TimerModal from "../components/TimerModal";
+import PetDisplay from "../components/PetDisplay";
+import HungerBar from "../components/HungerBar";
 
-const NAME_KEY = 'petName';
+const NAME_KEY = "petName";
 
 export default function HomeScreen({ navigation }: any) {
-  const { selectedPetId, resetPet, coins, streak, addCoins, food, setFood, hunger, setHunger, checkAndDepleteHunger } = usePet();
+  const {
+    selectedPetId,
+    coins,
+    streak,
+    addCoins,
+    hunger,
+    setHunger,
+    food,
+    setFood,
+    feedPet,
+  } = usePet();
+  
 
   const [timerModalVisible, setTimerModalVisible] = useState(false);
   const [devMenuVisible, setDevMenuVisible] = useState(false);
 
   // editable name
-  const [petName, setPetName] = useState('focus pal');
+  const [petName, setPetName] = useState("focus pal");
   const [isEditingName, setIsEditingName] = useState(false);
 
   useEffect(() => {
     (async () => {
       const savedName = await AsyncStorage.getItem(NAME_KEY);
       if (savedName) setPetName(savedName);
-      // Check and deplete hunger on app start
-      await checkAndDepleteHunger();
+      // NOTE: hunger decay/loading is handled in PetContext (recommended)
+      // If not yet, add the effects there instead of here.
     })();
   }, []);
 
   const saveName = async () => {
-    const trimmed = petName.trim() || 'focus pal';
+    const trimmed = petName.trim() || "focus pal";
     setPetName(trimmed);
     await AsyncStorage.setItem(NAME_KEY, trimmed);
     setIsEditingName(false);
   };
 
   const handleFeed = async () => {
-    if (food > 0 && hunger < 5) {
-      await setFood(food - 1);
-      await setHunger(Math.min(5, hunger + 1));
-      // You could add visual feedback here (animation, sound, etc.)
-    }
+    if (hunger >= 5) return; // already full
+    await feedPet();
   };
 
   return (
@@ -56,7 +66,7 @@ export default function HomeScreen({ navigation }: any) {
         {/* Left: Journal */}
         <TouchableOpacity
           style={styles.topBarButton}
-          onPress={() => navigation.navigate('Journal')}
+          onPress={() => navigation.navigate("Journal")}
         >
           <MaterialIcons name="menu-book" size={22} color="#3C5A49" />
         </TouchableOpacity>
@@ -65,22 +75,24 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.centerStatus}>
           <View style={styles.statusRowBig}>
             <MaterialIcons name="restaurant" size={16} color="#3C5A49" />
-            <View style={styles.hungerMeterContainer}>
-              {[1, 2, 3, 4, 5].map((segment) => (
-                <View
-                  key={segment}
-                  style={[
-                    styles.hungerSegment,
-                    segment <= hunger ? styles.hungerSegmentFull : styles.hungerSegmentEmpty
-                  ]}
-                />
-              ))}
-            </View>
+            <HungerBar hunger={hunger} width={90} height={18} />
 
-            <MaterialIcons name="monetization-on" size={16} color="#3C5A49" style={styles.statusIconSpacing} />
+            <MaterialIcons
+              name="monetization-on"
+              size={16}
+              color="#3C5A49"
+              style={styles.statusIconSpacing}
+            />
             <Text style={styles.statusTextBig}>{coins}</Text>
+
             <Text style={styles.statusDividerBig}>•</Text>
-            <MaterialIcons name="local-fire-department" size={16} color="#FF6B35" style={styles.statusIconSpacing} />
+
+            <MaterialIcons
+              name="local-fire-department"
+              size={16}
+              color="#FF6B35"
+              style={styles.statusIconSpacing}
+            />
             <Text style={styles.statusTextBig}>{streak}</Text>
           </View>
         </View>
@@ -113,7 +125,7 @@ export default function HomeScreen({ navigation }: any) {
               onPress={() => setIsEditingName(true)}
               style={styles.editBtn}
             >
-              <MaterialIcons name="edit" size={16} color="#3C5A49" style={styles.editIconSpacing} />
+              <MaterialIcons name="edit" size={16} color="#3C5A49" />
             </TouchableOpacity>
           </>
         )}
@@ -127,34 +139,33 @@ export default function HomeScreen({ navigation }: any) {
         </Text>
       </View>
 
-      {/* Feed Button */}
+      {/* Feed Button (no food inventory yet — just fills hunger) */}
       <TouchableOpacity
-        style={[styles.feedButton, (food === 0 || hunger >= 5) && styles.feedButtonDisabled]}
+        style={[styles.feedButton, hunger >= 5 && styles.feedButtonDisabled]}
         onPress={handleFeed}
-        disabled={food === 0 || hunger >= 5}
+        disabled={hunger >= 5}
       >
         <MaterialIcons name="restaurant-menu" size={18} color="white" />
-        <Text style={styles.feedButtonText}>Feed Pet (1 food)</Text>
+        <Text style={styles.feedButtonText}>
+          {hunger >= 5 ? "Pet is full" : "Feed Pet"}
+        </Text>
       </TouchableOpacity>
 
       {/* Actions */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => setTimerModalVisible(true)}
-      >
+      <TouchableOpacity style={styles.button} onPress={() => setTimerModalVisible(true)}>
         <Text style={styles.buttonText}>start focus session</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#3C5A49' }]}
-        onPress={() => navigation.navigate('Shop')}
+        style={[styles.button, { backgroundColor: "#3C5A49" }]}
+        onPress={() => navigation.navigate("Shop")}
       >
         <Text style={styles.buttonText}>closet</Text>
       </TouchableOpacity>
 
       {__DEV__ && (
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#8B5CF6' }]}
+          style={[styles.button, { backgroundColor: "#8B5CF6" }]}
           onPress={() => setDevMenuVisible(true)}
         >
           <Text style={styles.buttonText}>dev: state menu</Text>
@@ -166,7 +177,7 @@ export default function HomeScreen({ navigation }: any) {
         visible={timerModalVisible}
         onStart={(minutes, seconds, goal) => {
           setTimerModalVisible(false);
-          navigation.navigate('Focus', {
+          navigation.navigate("Focus", {
             seconds: minutes * 60 + seconds,
             goal,
           });
@@ -174,9 +185,9 @@ export default function HomeScreen({ navigation }: any) {
         onCancel={() => setTimerModalVisible(false)}
       />
 
-      {/* Dev Menu Modal */}
-      {__DEV__ && (
-        <View style={[styles.devModalOverlay, { display: devMenuVisible ? 'flex' : 'none' }]}>
+      {/* Dev Menu Overlay (simple controls that match context) */}
+      {__DEV__ && devMenuVisible && (
+        <View style={styles.devModalOverlay}>
           <View style={styles.devModal}>
             <View style={styles.devModalHeader}>
               <Text style={styles.devModalTitle}>Dev State Menu</Text>
@@ -184,85 +195,57 @@ export default function HomeScreen({ navigation }: any) {
                 <MaterialIcons name="close" size={24} color="#3C5A49" />
               </TouchableOpacity>
             </View>
-            
-            <View style={styles.devModalSection}>
-              <Text style={styles.devModalSectionTitle}>Hunger</Text>
-              <View style={styles.devButtonRow}>
-                {[1, 2, 3, 4, 5].map((level) => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[styles.devButtonSmall, hunger === level && styles.devButtonActive]}
-                    onPress={() => setHunger(level)}
-                  >
-                    <Text style={styles.devButtonTextSmall}>{level}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
 
-            <View style={styles.devModalSection}>
-              <Text style={styles.devModalSectionTitle}>Food</Text>
-              <View style={styles.devButtonRow}>
-                <TouchableOpacity
-                  style={styles.devButtonSmall}
-                  onPress={() => setFood(0)}
-                >
-                  <Text style={styles.devButtonTextSmall}>0</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.devButtonSmall}
-                  onPress={() => setFood(10)}
-                >
-                  <Text style={styles.devButtonTextSmall}>10</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.devButtonSmall}
-                  onPress={() => setFood(50)}
-                >
-                  <Text style={styles.devButtonTextSmall}>50</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+        {/* Hunger Debug */}
+        <View style={styles.devModalSection}>
+          <Text style={styles.devModalSectionTitle}>Hunger</Text>
 
-            <View style={styles.devModalSection}>
-              <Text style={styles.devModalSectionTitle}>Coins</Text>
-              <View style={styles.devButtonRow}>
-                <TouchableOpacity
-                  style={styles.devButtonSmall}
-                  onPress={() => addCoins(-50)}
-                >
-                  <Text style={styles.devButtonTextSmall}>-50</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.devButtonSmall}
-                  onPress={() => addCoins(100)}
-                >
-                  <Text style={styles.devButtonTextSmall}>+100</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.devButtonSmall}
-                  onPress={() => addCoins(500)}
-                >
-                  <Text style={styles.devButtonTextSmall}>+500</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.devModalSection}>
-              <Text style={styles.devModalSectionTitle}>Actions</Text>
+          <View style={styles.devButtonRow}>
+            {[0, 1, 2, 3, 4, 5].map((level) => (
               <TouchableOpacity
-                style={[styles.devButton, { backgroundColor: '#EF4444' }]}
-                onPress={async () => {
-                  await checkAndDepleteHunger();
-                  setDevMenuVisible(false);
-                }}
+                key={level}
+                style={[
+                  styles.devButtonSmall,
+                  hunger === level ? styles.devButtonActive : null,
+                ]}
+                
+                onPress={() => setHunger(level)}
               >
-                <Text style={styles.devButtonText}>Deplete Hunger Daily</Text>
+                <Text style={styles.devButtonTextSmall}>{level}</Text>
               </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Food Debug */}
+        <View style={styles.devModalSection}>
+          <Text style={styles.devModalSectionTitle}>Food</Text>
+
+          <View style={styles.devButtonRow}>
+            {[0, 5, 10, 50].map((amt) => (
+              <TouchableOpacity
+                key={amt}
+                style={styles.devButtonSmall}
+                onPress={() => setFood(amt)}
+              >
+                <Text style={styles.devButtonTextSmall}>{amt}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+
+            <View style={styles.devModalSection}>
+              <Text style={styles.devModalSectionTitle}>Hunger (debug)</Text>
+              <Text style={styles.devHint}>
+                Hunger is stored in context. To test the bar quickly, tap Feed a few times
+                (or implement a setHunger debug function in context).
+              </Text>
             </View>
           </View>
         </View>
       )}
+      
     </View>
   );
 }
@@ -270,252 +253,198 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6FAF7',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F6FAF7",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 24,
   },
 
   /* Top bar */
   topBar: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   topBarButton: { padding: 8 },
 
-  // keeps the center block centered since we removed the right button
-  rightSpacer: { width: 22 + 16 }, // ~icon size + padding feel
+  rightSpacer: { width: 22 + 16 },
 
   centerStatus: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusRowBig: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusTextBig: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#3C5A49',
+    fontWeight: "700",
+    color: "#3C5A49",
     marginLeft: 4,
   },
-  statusDividerBig: { 
-    fontSize: 15, 
-    color: '#6B7D73',
+  statusDividerBig: {
+    fontSize: 15,
+    color: "#6B7D73",
     marginHorizontal: 4,
   },
   statusIconSpacing: {
-    marginLeft: 4,
-  },
-
-  foodMeterContainer: {
-    width: 90,
-    height: 10,
-    backgroundColor: '#DCE8E1',
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginLeft: 4,
-  },
-  foodMeterFill: {
-    height: '100%',
-    backgroundColor: '#6FAF8A',
-    borderRadius: 999,
-  },
-  foodAmount: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#3C5A49',
-    marginLeft: 4,
-    minWidth: 30,
-  },
-
-  hungerMeterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 4,
-    gap: 2,
-  },
-  hungerSegment: {
-    width: 12,
-    height: 10,
-    borderRadius: 2,
-  },
-  hungerSegmentFull: {
-    backgroundColor: '#FF6B35',
-  },
-  hungerSegmentEmpty: {
-    backgroundColor: '#DCE8E1',
+    marginLeft: 6,
   },
 
   /* Title / name */
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   titleInput: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 12,
-    backgroundColor: '#E7F3EC',
-    color: '#3C5A49',
+    backgroundColor: "#E7F3EC",
+    color: "#3C5A49",
     minWidth: 160,
-    textAlign: 'center',
+    textAlign: "center",
   },
   editBtn: {
     padding: 6,
     borderRadius: 999,
-    backgroundColor: '#E7F3EC',
+    backgroundColor: "#E7F3EC",
     marginLeft: 10,
   },
-  editIconSpacing: {
-    marginLeft: 0,
+
+  /*devButtonActivate*/
+  devButtonActive: {
+    backgroundColor: "#6FAF8A",
   },
 
   /* Card */
   card: {
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
-    backgroundColor: '#E7F3EC',
+    backgroundColor: "#E7F3EC",
     borderRadius: 24,
     padding: 22,
-    alignItems: 'center',
+    alignItems: "center",
   },
   caption: {
     fontSize: 14,
-    color: '#3C5A49',
+    color: "#3C5A49",
+    marginTop: 8,
   },
 
   /* Buttons */
   feedButton: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: "#FF6B35",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 999,
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 12,
   },
   feedButtonDisabled: {
-    backgroundColor: '#CCC',
+    backgroundColor: "#CCC",
     opacity: 0.6,
   },
   feedButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginLeft: 6,
   },
   button: {
-    backgroundColor: '#6FAF8A',
+    backgroundColor: "#6FAF8A",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 999,
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 12,
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
-  },
-
-  footer: {
-    fontSize: 13,
-    color: '#6B7D73',
-    marginTop: 8,
+    fontWeight: "600",
   },
 
   /* Dev Modal */
   devModalOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
   },
   devModal: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 16,
     padding: 20,
-    width: '100%',
+    width: "100%",
     maxWidth: 320,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
   devModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   devModalTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#3C5A49',
+    fontWeight: "700",
+    color: "#3C5A49",
   },
   devModalSection: {
     marginBottom: 20,
   },
   devModalSectionTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#3C5A49',
+    fontWeight: "600",
+    color: "#3C5A49",
     marginBottom: 8,
   },
   devButtonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   devButtonSmall: {
-    backgroundColor: '#E7F3EC',
+    backgroundColor: "#E7F3EC",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     minWidth: 40,
-    alignItems: 'center',
-  },
-  devButtonActive: {
-    backgroundColor: '#6FAF8A',
+    alignItems: "center",
   },
   devButtonTextSmall: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#3C5A49',
+    fontWeight: "600",
+    color: "#3C5A49",
   },
-  devButton: {
-    backgroundColor: '#6FAF8A',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
-  },
-  devButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
+  devHint: {
+    fontSize: 12,
+    color: "#6B7D73",
+    lineHeight: 16,
   },
 });

@@ -1,19 +1,14 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ItemId, SlotId, getItem } from '../data/items';
+// src/context/PetContext.tsx
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { AppState } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ItemId, SlotId, getItem } from "../data/items";
 
-export type PetId = 'Rugy' | 'Strawb' | 'Ceviche';
+export type PetId = "Rugy" | "Strawb" | "Ceviche";
 
 type EquippedMap = Partial<Record<SlotId, ItemId>>;
 type OwnedMap = Record<PetId, ItemId[]>;
 type EquippedByPetMap = Record<PetId, EquippedMap>;
-
-export type JournalEntry = {
-  id: string;
-  date: string;
-  type: 'focus' | 'feed' | 'purchase' | 'other';
-  description: string;
-};
 
 type PetContextType = {
   selectedPetId: PetId | null;
@@ -27,67 +22,55 @@ type PetContextType = {
   completeFocusSession: () => Promise<void>;
   addCoins: (amount: number) => Promise<void>;
 
-  // Hunger/food system
-  totalFocusSeconds: number;
-  setTotalFocusSeconds: (seconds: number) => Promise<void>;
-  food: number;
-  setFood: (amount: number) => Promise<void>;
-  hunger: number;
-  setHunger: (amount: number) => Promise<void>;
-  coinsEarnedFromFocus: number;
-  setCoinsEarnedFromFocus: (amount: number) => Promise<void>;
-  foodEarnedFromFocus: number;
-  setFoodEarnedFromFocus: (amount: number) => Promise<void>;
-  addJournalEntry: (entry: Omit<JournalEntry, 'id'>) => Promise<void>;
-  getJournalEntries: () => Promise<JournalEntry[]>;
-  checkAndDepleteHunger: () => Promise<void>;
-
   // per-pet closets
   ownedByPet: OwnedMap;
   equippedByPet: EquippedByPetMap;
 
-  // closet actions
+  // actions
   buyItem: (itemId: ItemId) => Promise<boolean>;
   equipItem: (itemId: ItemId) => Promise<void>;
   unequipSlot: (slot: SlotId) => Promise<void>;
   unequipAll: () => Promise<void>;
 
-  // closet helpers
+  // helpers
   isOwned: (itemId: ItemId) => boolean;
   isEquipped: (itemId: ItemId) => boolean;
+
+  // inventory + meters
+  food: number; // 0..∞
+  setFood: (next: number) => Promise<void>;
+
+  hunger: number; // 0..5
+  setHunger: (next: number) => Promise<void>;
+  feedPet: () => Promise<void>; // costs 1 food, +1 hunger (max 5)
+
+  checkAndDepleteHunger: () => Promise<void>; // run daily hunger decay
 };
 
 const PetContext = createContext<PetContextType | null>(null);
 
 // Storage keys
-const KEY = 'selectedPetId';
-const COINS_KEY = 'coins';
-const STREAK_KEY = 'streak';
-const LAST_DONE_KEY = 'lastFocusDate';
-const JOURNAL_KEY = 'journalEntries';
-const HUNGER_KEY = 'hunger';
-const LAST_HUNGER_DEPLETED_KEY = 'lastHungerDepletedDate';
-const FOOD_KEY = 'food';
-const TOTAL_FOCUS_SECONDS_KEY = 'totalFocusSeconds';
-const COINS_EARNED_FROM_FOCUS_KEY = 'coinsEarnedFromFocus';
-const FOOD_EARNED_FROM_FOCUS_KEY = 'foodEarnedFromFocus';
+const KEY = "selectedPetId";
+const COINS_KEY = "coins";
+const STREAK_KEY = "streak";
+const LAST_DONE_KEY = "lastFocusDate";
 
-// per-pet closet storage keys
-const OWNED_BY_PET_KEY = 'ownedByPet_v1';
-const EQUIPPED_BY_PET_KEY = 'equippedByPet_v1';
+// Closet keys
+const OWNED_BY_PET_KEY = "ownedByPet_v1";
+const EQUIPPED_BY_PET_KEY = "equippedByPet_v1";
+
+// Inventory / meters keys
+const FOOD_KEY = "food";
+const HUNGER_KEY = "petHunger"; // 0..5
+const HUNGER_LAST_KEY = "petHungerLast"; // YYYY-MM-DD
 
 // Defaults
-const EMPTY_OWNED: OwnedMap = {
-  Strawb: [],
-  Rugy: [],
-  Ceviche: [],
-};
+const EMPTY_OWNED: OwnedMap = { Strawb: [], Rugy: [], Ceviche: [] };
+const EMPTY_EQUIPPED: EquippedByPetMap = { Strawb: {}, Rugy: {}, Ceviche: {} };
 
-const EMPTY_EQUIPPED: EquippedByPetMap = {
-  Strawb: {},
-  Rugy: {},
-  Ceviche: {},
-};
+const todayKey = () => new Date().toISOString().split("T")[0];
+const clamp = (n: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, n));
 
 export function PetProvider({ children }: { children: React.ReactNode }) {
   const [selectedPetId, setSelectedPetId] = useState<PetId | null>(null);
@@ -97,21 +80,15 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
   const [streak, setStreak] = useState<number>(0);
   const [lastFocusDate, setLastFocusDate] = useState<string | null>(null);
 
-  // Hunger/food state
-  const [food, setFood] = useState<number>(0);
-  const [hunger, setHunger] = useState<number>(5); // 5 segments max
-  const [totalFocusSeconds, setTotalFocusSeconds] = useState<number>(0);
-  const [coinsEarnedFromFocus, setCoinsEarnedFromFocus] = useState<number>(0);
-  const [foodEarnedFromFocus, setFoodEarnedFromFocus] = useState<number>(0);
-  const [lastHungerDepletedDate, setLastHungerDepletedDate] = useState<
-    string | null
-  >(null);
-
-  // per-pet closet state
   const [ownedByPet, setOwnedByPet] = useState<OwnedMap>(EMPTY_OWNED);
   const [equippedByPet, setEquippedByPet] =
     useState<EquippedByPetMap>(EMPTY_EQUIPPED);
 
+  // inventory + meters
+  const [food, setFoodState] = useState<number>(0);
+  const [hunger, setHungerState] = useState<number>(5);
+
+  // ----- Load everything on startup -----
   useEffect(() => {
     (async () => {
       try {
@@ -120,48 +97,18 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
         const savedStreak = await AsyncStorage.getItem(STREAK_KEY);
         const savedLast = await AsyncStorage.getItem(LAST_DONE_KEY);
 
-        // Hunger/food loading
-        const savedHunger = await AsyncStorage.getItem(HUNGER_KEY);
-        const savedLastHungerDepleted = await AsyncStorage.getItem(
-          LAST_HUNGER_DEPLETED_KEY,
-        );
-        const savedFood = await AsyncStorage.getItem(FOOD_KEY);
-        const savedTotalFocusSeconds = await AsyncStorage.getItem(
-          TOTAL_FOCUS_SECONDS_KEY,
-        );
-        const savedCoinsEarnedFromFocus = await AsyncStorage.getItem(
-          COINS_EARNED_FROM_FOCUS_KEY,
-        );
-        const savedFoodEarnedFromFocus = await AsyncStorage.getItem(
-          FOOD_EARNED_FROM_FOCUS_KEY,
-        );
-
-        // Per-pet closet loading
         const savedOwnedByPet = await AsyncStorage.getItem(OWNED_BY_PET_KEY);
-        const savedEquippedByPet = await AsyncStorage.getItem(
-          EQUIPPED_BY_PET_KEY,
-        );
+        const savedEquippedByPet = await AsyncStorage.getItem(EQUIPPED_BY_PET_KEY);
+
+        const savedFood = await AsyncStorage.getItem(FOOD_KEY);
+        const savedHunger = await AsyncStorage.getItem(HUNGER_KEY);
+        const savedHungerLast = await AsyncStorage.getItem(HUNGER_LAST_KEY);
 
         setSelectedPetId((savedPet as PetId) ?? null);
         setCoins(savedCoins ? Number(savedCoins) : 0);
         setStreak(savedStreak ? Number(savedStreak) : 0);
         setLastFocusDate(savedLast ?? null);
 
-        // Hunger/food state
-        setHunger(savedHunger ? Number(savedHunger) : 5);
-        setLastHungerDepletedDate(savedLastHungerDepleted ?? null);
-        setFood(savedFood ? Number(savedFood) : 0);
-        setTotalFocusSeconds(
-          savedTotalFocusSeconds ? Number(savedTotalFocusSeconds) : 0,
-        );
-        setCoinsEarnedFromFocus(
-          savedCoinsEarnedFromFocus ? Number(savedCoinsEarnedFromFocus) : 0,
-        );
-        setFoodEarnedFromFocus(
-          savedFoodEarnedFromFocus ? Number(savedFoodEarnedFromFocus) : 0,
-        );
-
-        // Load per-pet closet
         const ownedParsed = savedOwnedByPet
           ? (JSON.parse(savedOwnedByPet) as OwnedMap)
           : EMPTY_OWNED;
@@ -170,60 +117,134 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
           ? (JSON.parse(savedEquippedByPet) as EquippedByPetMap)
           : EMPTY_EQUIPPED;
 
-        // Ensure all pets exist (safe merge)
         setOwnedByPet({ ...EMPTY_OWNED, ...ownedParsed });
         setEquippedByPet({ ...EMPTY_EQUIPPED, ...equippedParsed });
+
+        setFoodState(savedFood ? Math.max(0, Math.floor(Number(savedFood))) : 0);
+
+        const h = savedHunger != null ? Number(savedHunger) : 5;
+        setHungerState(clamp(Number.isFinite(h) ? Math.floor(h) : 5, 0, 5));
+
+        // ensure hunger last exists
+        if (!savedHungerLast) {
+          await AsyncStorage.setItem(HUNGER_LAST_KEY, todayKey());
+        }
       } finally {
         setIsReady(true);
       }
     })();
   }, []);
 
+  // ----- Hunger decay helpers -----
+  async function applyDailyHungerDecay() {
+    const last = await AsyncStorage.getItem(HUNGER_LAST_KEY);
+    const t = todayKey();
+
+    if (!last) {
+      await AsyncStorage.setItem(HUNGER_LAST_KEY, t);
+      return;
+    }
+    if (last === t) return;
+
+    const lastDate = new Date(last + "T00:00:00");
+    const nowDate = new Date(t + "T00:00:00");
+    const diffDays = Math.floor(
+      (nowDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (diffDays > 0) {
+      setHungerState((prev) => {
+        const next = clamp(prev - diffDays, 0, 5);
+        AsyncStorage.setItem(HUNGER_KEY, String(next));
+        return next;
+      });
+      await AsyncStorage.setItem(HUNGER_LAST_KEY, t);
+    }
+  }
+
+  const checkAndDepleteHunger = async () => {
+    await applyDailyHungerDecay();
+  };
+
+  // Run decay on mount + when app returns active
+  useEffect(() => {
+    checkAndDepleteHunger();
+  }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        checkAndDepleteHunger();
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // ----- Setters that persist -----
+  const setFood = async (next: number) => {
+    const safe = Math.max(0, Math.floor(next));
+    await AsyncStorage.setItem(FOOD_KEY, String(safe));
+    setFoodState(safe);
+  };
+
+  const setHunger = async (next: number) => {
+    const safe = clamp(Math.floor(next), 0, 5);
+    await AsyncStorage.setItem(HUNGER_KEY, String(safe));
+    await AsyncStorage.setItem(HUNGER_LAST_KEY, todayKey());
+    setHungerState(safe);
+  };
+
+  // ----- Feeding: costs 1 food, +1 hunger -----
+  const feedPet = async () => {
+    if (food <= 0) return;
+    if (hunger >= 5) return;
+
+    const nextFood = food - 1;
+    const nextHunger = clamp(hunger + 1, 0, 5);
+
+    await AsyncStorage.setItem(FOOD_KEY, String(nextFood));
+    await AsyncStorage.setItem(HUNGER_KEY, String(nextHunger));
+    await AsyncStorage.setItem(HUNGER_LAST_KEY, todayKey());
+
+    setFoodState(nextFood);
+    setHungerState(nextHunger);
+  };
+
+  // ----- Pet selection / reset -----
   const choosePet = async (petId: PetId) => {
     await AsyncStorage.setItem(KEY, petId);
     setSelectedPetId(petId);
-
-    // Ensure structure exists in case of older saves
-    setOwnedByPet(prev => ({ ...EMPTY_OWNED, ...prev }));
-    setEquippedByPet(prev => ({ ...EMPTY_EQUIPPED, ...prev }));
+    setOwnedByPet((prev) => ({ ...EMPTY_OWNED, ...prev }));
+    setEquippedByPet((prev) => ({ ...EMPTY_EQUIPPED, ...prev }));
   };
 
   const resetPet = async () => {
-    // Reset all saved user state
     await AsyncStorage.multiRemove([
       KEY,
       COINS_KEY,
       STREAK_KEY,
       LAST_DONE_KEY,
-      HUNGER_KEY,
-      LAST_HUNGER_DEPLETED_KEY,
-      FOOD_KEY,
-      TOTAL_FOCUS_SECONDS_KEY,
-      COINS_EARNED_FROM_FOCUS_KEY,
-      FOOD_EARNED_FROM_FOCUS_KEY,
       OWNED_BY_PET_KEY,
       EQUIPPED_BY_PET_KEY,
+      FOOD_KEY,
+      HUNGER_KEY,
+      HUNGER_LAST_KEY,
     ]);
 
     setSelectedPetId(null);
     setCoins(0);
     setStreak(0);
     setLastFocusDate(null);
-    setHunger(5);
-    setLastHungerDepletedDate(null);
-    setFood(0);
-    setTotalFocusSeconds(0);
-    setCoinsEarnedFromFocus(0);
-    setFoodEarnedFromFocus(0);
     setOwnedByPet(EMPTY_OWNED);
     setEquippedByPet(EMPTY_EQUIPPED);
+    setFoodState(0);
+    setHungerState(5);
   };
 
+  // ----- Focus session -----
   const completeFocusSession = async () => {
-    // +5 coins every completed session
     const newCoins = coins + 5;
 
-    // streak increments only once per calendar day
     const today = new Date().toISOString().slice(0, 10);
     const shouldIncrementStreak = lastFocusDate !== today;
     const newStreak = shouldIncrementStreak ? streak + 1 : streak;
@@ -243,59 +264,7 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
     setCoins(newCoins);
   };
 
-  // ---------- Hunger/Food helpers ----------
-  const setFoodAsync = async (amount: number) => {
-    await AsyncStorage.setItem(FOOD_KEY, String(amount));
-    setFood(amount);
-  };
-
-  const setHungerAsync = async (amount: number) => {
-    await AsyncStorage.setItem(HUNGER_KEY, String(amount));
-    setHunger(amount);
-  };
-
-  const setTotalFocusSecondsAsync = async (seconds: number) => {
-    await AsyncStorage.setItem(TOTAL_FOCUS_SECONDS_KEY, String(seconds));
-    setTotalFocusSeconds(seconds);
-  };
-
-  const setCoinsEarnedFromFocusAsync = async (amount: number) => {
-    await AsyncStorage.setItem(COINS_EARNED_FROM_FOCUS_KEY, String(amount));
-    setCoinsEarnedFromFocus(amount);
-  };
-
-  const setFoodEarnedFromFocusAsync = async (amount: number) => {
-    await AsyncStorage.setItem(FOOD_EARNED_FROM_FOCUS_KEY, String(amount));
-    setFoodEarnedFromFocus(amount);
-  };
-
-  // Check and deplete hunger daily
-  const checkAndDepleteHunger = async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    if (lastHungerDepletedDate !== today && hunger > 1) {
-      const newHunger = Math.max(1, hunger - 1);
-      await setHungerAsync(newHunger);
-      await AsyncStorage.setItem(LAST_HUNGER_DEPLETED_KEY, today);
-      setLastHungerDepletedDate(today);
-    }
-  };
-
-  const addJournalEntry = async (entry: Omit<JournalEntry, 'id'>) => {
-    const journalEntry: JournalEntry = {
-      ...entry,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-    };
-    const existingEntries = await getJournalEntries();
-    const updatedEntries = [journalEntry, ...existingEntries];
-    await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updatedEntries));
-  };
-
-  const getJournalEntries = async (): Promise<JournalEntry[]> => {
-    const saved = await AsyncStorage.getItem(JOURNAL_KEY);
-    return saved ? JSON.parse(saved) : [];
-  };
-
-  // ---------- Closet helpers ----------
+  // ----- Closet helpers -----
   const isOwned = (itemId: ItemId) => {
     if (!selectedPetId) return false;
     return (ownedByPet[selectedPetId] || []).includes(itemId);
@@ -307,14 +276,12 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
     return Object.values(eq).includes(itemId);
   };
 
-  // ---------- Closet actions ----------
+  // ----- Closet actions -----
   const buyItem = async (itemId: ItemId) => {
     if (!selectedPetId) return false;
 
     const def = getItem(itemId);
     if (!def) return false;
-
-    // prevent buying items for other pets
     if (def.petId !== selectedPetId) return false;
 
     const owned = ownedByPet[selectedPetId] || [];
@@ -331,14 +298,10 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
     };
 
     await AsyncStorage.setItem(COINS_KEY, String(newCoins));
-    await AsyncStorage.setItem(
-      OWNED_BY_PET_KEY,
-      JSON.stringify(nextOwnedByPet),
-    );
+    await AsyncStorage.setItem(OWNED_BY_PET_KEY, JSON.stringify(nextOwnedByPet));
 
     setCoins(newCoins);
     setOwnedByPet(nextOwnedByPet);
-
     return true;
   };
 
@@ -347,15 +310,13 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
 
     const def = getItem(itemId);
     if (!def) return;
-
     if (def.petId !== selectedPetId) return;
 
     const owned = ownedByPet[selectedPetId] || [];
     if (!owned.includes(itemId)) return;
 
     const nextEquippedForPet: EquippedMap = {
-      // wipe everything so only ONE item can be equipped at a time
-      [def.slot]: itemId,
+      [def.slot]: itemId, // one item per slot
     };
 
     const nextEquippedByPet: EquippedByPetMap = {
@@ -363,11 +324,7 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
       [selectedPetId]: nextEquippedForPet,
     };
 
-    await AsyncStorage.setItem(
-      EQUIPPED_BY_PET_KEY,
-      JSON.stringify(nextEquippedByPet),
-    );
-
+    await AsyncStorage.setItem(EQUIPPED_BY_PET_KEY, JSON.stringify(nextEquippedByPet));
     setEquippedByPet(nextEquippedByPet);
   };
 
@@ -382,11 +339,7 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
       [selectedPetId]: current,
     };
 
-    await AsyncStorage.setItem(
-      EQUIPPED_BY_PET_KEY,
-      JSON.stringify(nextEquippedByPet),
-    );
-
+    await AsyncStorage.setItem(EQUIPPED_BY_PET_KEY, JSON.stringify(nextEquippedByPet));
     setEquippedByPet(nextEquippedByPet);
   };
 
@@ -398,11 +351,7 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
       [selectedPetId]: {},
     };
 
-    await AsyncStorage.setItem(
-      EQUIPPED_BY_PET_KEY,
-      JSON.stringify(nextEquippedByPet),
-    );
-
+    await AsyncStorage.setItem(EQUIPPED_BY_PET_KEY, JSON.stringify(nextEquippedByPet));
     setEquippedByPet(nextEquippedByPet);
   };
 
@@ -413,35 +362,28 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
         isReady,
         choosePet,
         resetPet,
+
         coins,
         streak,
         completeFocusSession,
         addCoins,
 
-        // Hunger/food
-        totalFocusSeconds,
-        setTotalFocusSeconds: setTotalFocusSecondsAsync,
-        food,
-        setFood: setFoodAsync,
-        hunger,
-        setHunger: setHungerAsync,
-        coinsEarnedFromFocus,
-        setCoinsEarnedFromFocus: setCoinsEarnedFromFocusAsync,
-        foodEarnedFromFocus,
-        setFoodEarnedFromFocus: setFoodEarnedFromFocusAsync,
-        addJournalEntry,
-        getJournalEntries,
-        checkAndDepleteHunger,
-
-        // Closet
         ownedByPet,
         equippedByPet,
         buyItem,
         equipItem,
         unequipSlot,
         unequipAll,
+
         isOwned,
         isEquipped,
+
+        food,
+        setFood,
+        hunger,
+        setHunger,
+        feedPet,
+        checkAndDepleteHunger,
       }}
     >
       {children}
@@ -451,6 +393,6 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
 
 export function usePet() {
   const ctx = useContext(PetContext);
-  if (!ctx) throw new Error('usePet must be used inside PetProvider');
+  if (!ctx) throw new Error("usePet must be used inside PetProvider");
   return ctx;
 }
