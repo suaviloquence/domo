@@ -156,6 +156,7 @@ export default function FocusScreen({ route }: any) {
       style={styles.backgroundImage}
       resizeMode="cover"
     >
+      <View style={styles.overlay} />
       <View style={styles.container}>
         {/* Top: Timer and Goal */}
         <View style={styles.top}>
@@ -223,6 +224,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center', // centers content vertically
     alignItems: 'center', // centers content horizontally
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, // covers entire background
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // black with 50% opacity
   },
   top: {
     alignItems: 'center',

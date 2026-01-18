@@ -70,6 +70,8 @@ export default function HomeScreen({ navigation }: any) {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
+        {/* Overlay to dim the background */}
+        <View style={styles.overlay} />
         {/* Top Status Bar */}
         <View style={styles.topBar}>
           <View style={styles.statusPill}>
@@ -313,6 +315,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // centers content vertically
     alignItems: 'center', // centers content horizontally
   },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, // covers entire background
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // black with 50% opacity
+  },
 
   /* Top Status Bar */
   topBar: {
@@ -323,15 +329,15 @@ const styles = StyleSheet.create({
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E7F3EC',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderWidth: 1.5,
-    borderColor: '#D4E5DA',
-    shadowColor: '#3C5A49',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -346,7 +352,7 @@ const styles = StyleSheet.create({
     marginLeft: 14,
     paddingLeft: 14,
     borderLeftWidth: 2,
-    borderLeftColor: '#6FAF8A',
+    borderLeftColor: 'rgba(255, 255, 255, 0.4)',
     gap: 4,
   },
   statText: {
@@ -359,7 +365,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 14,
-    backgroundColor: '#B8C9BD',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     marginHorizontal: 8,
   },
 
@@ -371,12 +377,17 @@ const styles = StyleSheet.create({
   },
   nameRow: {
     marginBottom: 12,
-    backgroundColor: '#E7F3EC',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderWidth: 1.5,
-    borderColor: '#D4E5DA',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   nameDisplay: {
     flexDirection: 'row',
