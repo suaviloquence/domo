@@ -38,9 +38,9 @@ export default function App() {
   return (
     <PetProvider>
       <NavigationContainer>
-        <StatusBar barStyle="dark-content" />
         <RootNavigator />
       </NavigationContainer>
     </PetProvider>
   );
 }
+
