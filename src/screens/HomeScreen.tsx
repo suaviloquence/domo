@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  ImageBackground,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -64,234 +65,240 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Top Status Bar */}
-      <View style={styles.topBar}>
-        <View style={styles.statusPill}>
-          {/* Left: Hunger */}
-          <View style={styles.hungerSection}>
-            <HungerBar hunger={hunger} width={200} height={50} />
-          </View>
+      <ImageBackground
+        source={require('../assets/BACKGROUND.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        {/* Top Status Bar */}
+        <View style={styles.topBar}>
+          <View style={styles.statusPill}>
+            {/* Left: Hunger */}
+            <View style={styles.hungerSection}>
+              <HungerBar hunger={hunger} width={200} height={50} />
+            </View>
 
-          {/* Right: Coins & Streak with accent border */}
-          <View style={styles.statsSection}>
-            <Image
-              source={coinIcon}
-              style={styles.coinIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.statText}>{coins}</Text>
-            <View style={styles.statDivider} />
-            <MaterialIcons
-              name="local-fire-department"
-              size={16}
-              color="#FF6B35"
-            />
-            <Text style={styles.statText}>{streak}</Text>
+            {/* Right: Coins & Streak with accent border */}
+            <View style={styles.statsSection}>
+              <Image
+                source={coinIcon}
+                style={styles.coinIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.statText}>{coins}</Text>
+              <View style={styles.statDivider} />
+              <MaterialIcons
+                name="local-fire-department"
+                size={16}
+                color="#FF6B35"
+              />
+              <Text style={styles.statText}>{streak}</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Center Content */}
-      <View style={styles.centerContent}>
-        {/* Editable Pet Name */}
-        <View style={styles.nameRow}>
-          {isEditingName ? (
-            <View style={styles.nameEditContainer}>
-              <TextInput
-                value={petName}
-                onChangeText={setPetName}
-                style={styles.nameInput}
-                autoFocus
-                maxLength={16}
-                returnKeyType="done"
-                onSubmitEditing={saveName}
-                onBlur={saveName}
-              />
-            </View>
-          ) : (
+        {/* Center Content */}
+        <View style={styles.centerContent}>
+          {/* Editable Pet Name */}
+          <View style={styles.nameRow}>
+            {isEditingName ? (
+              <View style={styles.nameEditContainer}>
+                <TextInput
+                  value={petName}
+                  onChangeText={setPetName}
+                  style={styles.nameInput}
+                  autoFocus
+                  maxLength={16}
+                  returnKeyType="done"
+                  onSubmitEditing={saveName}
+                  onBlur={saveName}
+                />
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.nameDisplay}
+                onPress={() => setIsEditingName(true)}
+              >
+                <Text style={styles.nameText}>{petName}</Text>
+                <MaterialIcons
+                  name="edit"
+                  size={14}
+                  color="#9BA8A0"
+                  style={styles.editIcon}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Pet Display */}
+          <View style={styles.petContainer}>
+            <PetDisplay selectedPetId={selectedPetId} size={240} />
+          </View>
+        </View>
+
+        {/* Bottom Actions */}
+        <View style={styles.bottomActions}>
+          {/* Focus Button */}
+          <TouchableOpacity
+            style={styles.focusButton}
+            onPress={() => setTimerModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="timer" size={20} color="white" />
+            <Text style={styles.focusButtonText}>enter focus mode</Text>
+          </TouchableOpacity>
+
+          {/* Icon Button Row */}
+          <View style={styles.iconButtonRow}>
             <TouchableOpacity
-              style={styles.nameDisplay}
-              onPress={() => setIsEditingName(true)}
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('Journal')}
+              activeOpacity={0.7}
             >
-              <Text style={styles.nameText}>{petName}</Text>
-              <MaterialIcons
-                name="edit"
-                size={14}
-                color="#9BA8A0"
-                style={styles.editIcon}
-              />
+              <View style={styles.iconButtonInner}>
+                <Image
+                  source={journalIcon}
+                  style={styles.iconButtonImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.iconButtonLabel}>journal</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.iconButton,
+                (food <= 0 || hunger >= 5) && styles.iconButtonDisabled,
+              ]}
+              onPress={handleFeed}
+              disabled={food <= 0 || hunger >= 5}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iconButtonInner}>
+                <View style={styles.foodIconContainer}>
+                  <Image
+                    source={foodIcon}
+                    style={styles.iconButtonImage}
+                    resizeMode="contain"
+                  />
+                  <View
+                    style={[
+                      styles.foodBadge,
+                      (food <= 0 || hunger >= 5) && styles.foodBadgeDisabled,
+                    ]}
+                  >
+                    <Text style={styles.foodBadgeText}>{food}</Text>
+                  </View>
+                </View>
+              </View>
+              <Text
+                style={[
+                  styles.iconButtonLabel,
+                  (food <= 0 || hunger >= 5) && styles.iconButtonLabelDisabled,
+                ]}
+              >
+                feed
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('Shop')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iconButtonInner}>
+                <Image
+                  source={closetIcon}
+                  style={styles.iconButtonImage}
+                  resizeMode="contain"
+                  renderingMode="original"
+                />
+              </View>
+              <Text style={styles.iconButtonLabel}>closet</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('Settings')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iconButtonInner}>
+                <MaterialIcons name="settings" size={22} color="#3C5A49" />
+              </View>
+              <Text style={styles.iconButtonLabel}>settings</Text>
+            </TouchableOpacity>
+          </View>
+
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.devButton}
+              onPress={() => setDevMenuVisible(true)}
+            >
+              <Text style={styles.devButtonText}>dev menu</Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Pet Display */}
-        <View style={styles.petContainer}>
-          <PetDisplay selectedPetId={selectedPetId} size={240} />
-        </View>
-      </View>
+        {/* Timer Modal */}
+        <TimerModal
+          visible={timerModalVisible}
+          onStart={(minutes, seconds, goal) => {
+            setTimerModalVisible(false);
+            navigation.navigate('Focus', {
+              seconds: minutes * 60 + seconds,
+              goal,
+            });
+          }}
+          onCancel={() => setTimerModalVisible(false)}
+        />
 
-      {/* Bottom Actions */}
-      <View style={styles.bottomActions}>
-        {/* Focus Button */}
-        <TouchableOpacity
-          style={styles.focusButton}
-          onPress={() => setTimerModalVisible(true)}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="timer" size={20} color="white" />
-          <Text style={styles.focusButtonText}>enter focus mode</Text>
-        </TouchableOpacity>
+        {/* Dev Menu Overlay */}
+        {__DEV__ && devMenuVisible && (
+          <View style={styles.devModalOverlay}>
+            <View style={styles.devModal}>
+              <View style={styles.devModalHeader}>
+                <Text style={styles.devModalTitle}>Dev State Menu</Text>
+                <TouchableOpacity onPress={() => setDevMenuVisible(false)}>
+                  <MaterialIcons name="close" size={24} color="#3C5A49" />
+                </TouchableOpacity>
+              </View>
 
-        {/* Icon Button Row */}
-        <View style={styles.iconButtonRow}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => navigation.navigate('Journal')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.iconButtonInner}>
-              <Image
-                source={journalIcon}
-                style={styles.iconButtonImage}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.iconButtonLabel}>journal</Text>
-          </TouchableOpacity>
+              <View style={styles.devModalSection}>
+                <Text style={styles.devModalSectionTitle}>Hunger</Text>
+                <View style={styles.devButtonRow}>
+                  {[0, 1, 2, 3, 4, 5].map(level => (
+                    <TouchableOpacity
+                      key={level}
+                      style={[
+                        styles.devButtonSmall,
+                        hunger === level ? styles.devButtonActive : null,
+                      ]}
+                      onPress={() => setHunger(level)}
+                    >
+                      <Text style={styles.devButtonTextSmall}>{level}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
 
-          <TouchableOpacity
-            style={[
-              styles.iconButton,
-              (food <= 0 || hunger >= 5) && styles.iconButtonDisabled,
-            ]}
-            onPress={handleFeed}
-            disabled={food <= 0 || hunger >= 5}
-            activeOpacity={0.7}
-          >
-            <View style={styles.iconButtonInner}>
-              <View style={styles.foodIconContainer}>
-                <Image
-                  source={foodIcon}
-                  style={styles.iconButtonImage}
-                  resizeMode="contain"
-                />
-                <View
-                  style={[
-                    styles.foodBadge,
-                    (food <= 0 || hunger >= 5) && styles.foodBadgeDisabled,
-                  ]}
-                >
-                  <Text style={styles.foodBadgeText}>{food}</Text>
+              <View style={styles.devModalSection}>
+                <Text style={styles.devModalSectionTitle}>Food</Text>
+                <View style={styles.devButtonRow}>
+                  {[0, 5, 10, 50].map(amt => (
+                    <TouchableOpacity
+                      key={amt}
+                      style={styles.devButtonSmall}
+                      onPress={() => setFood(amt)}
+                    >
+                      <Text style={styles.devButtonTextSmall}>{amt}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
             </View>
-            <Text
-              style={[
-                styles.iconButtonLabel,
-                (food <= 0 || hunger >= 5) && styles.iconButtonLabelDisabled,
-              ]}
-            >
-              feed
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => navigation.navigate('Shop')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.iconButtonInner}>
-              <Image
-                source={closetIcon}
-                style={styles.iconButtonImage}
-                resizeMode="contain"
-                renderingMode="original"
-              />
-            </View>
-            <Text style={styles.iconButtonLabel}>closet</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => navigation.navigate('Settings')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.iconButtonInner}>
-              <MaterialIcons name="settings" size={22} color="#3C5A49" />
-            </View>
-            <Text style={styles.iconButtonLabel}>settings</Text>
-          </TouchableOpacity>
-        </View>
-
-        {__DEV__ && (
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={() => setDevMenuVisible(true)}
-          >
-            <Text style={styles.devButtonText}>dev menu</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Timer Modal */}
-      <TimerModal
-        visible={timerModalVisible}
-        onStart={(minutes, seconds, goal) => {
-          setTimerModalVisible(false);
-          navigation.navigate('Focus', {
-            seconds: minutes * 60 + seconds,
-            goal,
-          });
-        }}
-        onCancel={() => setTimerModalVisible(false)}
-      />
-
-      {/* Dev Menu Overlay */}
-      {__DEV__ && devMenuVisible && (
-        <View style={styles.devModalOverlay}>
-          <View style={styles.devModal}>
-            <View style={styles.devModalHeader}>
-              <Text style={styles.devModalTitle}>Dev State Menu</Text>
-              <TouchableOpacity onPress={() => setDevMenuVisible(false)}>
-                <MaterialIcons name="close" size={24} color="#3C5A49" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.devModalSection}>
-              <Text style={styles.devModalSectionTitle}>Hunger</Text>
-              <View style={styles.devButtonRow}>
-                {[0, 1, 2, 3, 4, 5].map(level => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[
-                      styles.devButtonSmall,
-                      hunger === level ? styles.devButtonActive : null,
-                    ]}
-                    onPress={() => setHunger(level)}
-                  >
-                    <Text style={styles.devButtonTextSmall}>{level}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.devModalSection}>
-              <Text style={styles.devModalSectionTitle}>Food</Text>
-              <View style={styles.devButtonRow}>
-                {[0, 5, 10, 50].map(amt => (
-                  <TouchableOpacity
-                    key={amt}
-                    style={styles.devButtonSmall}
-                    onPress={() => setFood(amt)}
-                  >
-                    <Text style={styles.devButtonTextSmall}>{amt}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
           </View>
-        </View>
-      )}
+        )}
+      </ImageBackground>
     </View>
   );
 }
@@ -300,6 +307,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6FAF7',
+  },
+  backgroundImage: {
+    flex: 1,
+    justifyContent: 'center', // centers content vertically
+    alignItems: 'center', // centers content horizontally
   },
 
   /* Top Status Bar */
@@ -359,6 +371,12 @@ const styles = StyleSheet.create({
   },
   nameRow: {
     marginBottom: 12,
+    backgroundColor: '#E7F3EC',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1.5,
+    borderColor: '#D4E5DA',
   },
   nameDisplay: {
     flexDirection: 'row',
@@ -367,7 +385,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   nameText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '500',
     color: '#3C5A49',
     letterSpacing: 0.5,
@@ -377,15 +395,15 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   nameEditContainer: {
-    backgroundColor: '#E7F3EC',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderWidth: 1.5,
-    borderColor: '#D4E5DA',
+    // backgroundColor: '#E7F3EC',
+    // borderRadius: 14,
+    // paddingHorizontal: 14,
+    // paddingVertical: 6,
+    // borderWidth: 1.5,
+    // borderColor: '#D4E5DA',
   },
   nameInput: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '500',
     color: '#3C5A49',
     textAlign: 'center',
@@ -438,7 +456,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     tintColor: '#3C5A49',
-    // tintColor: '#00000000', // transparent but blocks inherited tint
   },
   iconButtonInner: {
     width: 52,
@@ -449,13 +466,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: '#D4E5DA',
+
+    // iOS
     shadowColor: '#3C5A49',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-    tintColor: null,
-    opacity: 0.99,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+
+    // Android
+    elevation: 4,
   },
   iconButtonDisabled: {
     opacity: 0.6,

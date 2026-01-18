@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   AppState,
+  ImageBackground,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import PetDisplay from '../components/PetDisplay';
@@ -150,67 +151,78 @@ export default function FocusScreen({ route }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Top: Timer and Goal */}
-      <View style={styles.top}>
-        <View style={styles.timerContainer}>
-          <Text style={styles.timer}>{formatTime(secondsLeft)}</Text>
-        </View>
-        {goal ? (
-          <View style={styles.goalContainer}>
-            <MaterialIcons name="flag" size={14} color="#6FAF8A" />
-            <Text style={styles.goalText}>{goal}</Text>
+    <ImageBackground
+      source={require('../assets/BACKGROUND.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <View style={styles.container}>
+        {/* Top: Timer and Goal */}
+        <View style={styles.top}>
+          <View style={styles.timerContainer}>
+            <Text style={styles.timer}>{formatTime(secondsLeft)}</Text>
           </View>
-        ) : null}
-      </View>
+          {goal ? (
+            <View style={styles.goalContainer}>
+              <MaterialIcons name="flag" size={14} color="#6FAF8A" />
+              <Text style={styles.goalText}>{goal}</Text>
+            </View>
+          ) : null}
+        </View>
 
-      {/* Middle: Pet */}
-      <View style={styles.middle}>
-        <PetDisplay selectedPetId={selectedPetId} size={240} />
-      </View>
+        {/* Middle: Pet */}
+        <View style={styles.middle}>
+          <PetDisplay selectedPetId={selectedPetId} size={240} />
+        </View>
 
-      {/* Bottom: Controls */}
-      <View style={styles.bottom}>
-        {!isDone ? (
-          <>
-            <TouchableOpacity
-              style={[
-                styles.button,
-                isRunning ? styles.buttonSecondary : styles.buttonPrimary,
-              ]}
-              onPress={handlePauseResume}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons
-                name={isRunning ? 'pause' : 'play-arrow'}
-                size={20}
-                color="white"
-              />
-              <Text style={styles.buttonText}>
-                {isRunning ? 'pause' : 'resume'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary]}
-              onPress={handleCancel}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="close" size={20} color="white" />
-              <Text style={styles.buttonText}>cancel</Text>
-            </TouchableOpacity>
-          </>
-        ) : null}
+        {/* Bottom: Controls */}
+        <View style={styles.bottom}>
+          {!isDone ? (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  isRunning ? styles.buttonSecondary : styles.buttonPrimary,
+                ]}
+                onPress={handlePauseResume}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons
+                  name={isRunning ? 'pause' : 'play-arrow'}
+                  size={20}
+                  color="white"
+                />
+                <Text style={styles.buttonText}>
+                  {isRunning ? 'pause' : 'resume'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonPrimary]}
+                onPress={handleCancel}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="close" size={20} color="white" />
+                <Text style={styles.buttonText}>cancel</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6FAF7',
     padding: 24,
     justifyContent: 'space-between',
+  },
+
+  backgroundImage: {
+    flex: 1,
+    justifyContent: 'center', // centers content vertically
+    alignItems: 'center', // centers content horizontally
   },
   top: {
     alignItems: 'center',

@@ -45,13 +45,11 @@ export default function PetDisplay({
     <View style={[styles.wrap, { width: size, height: size }, imageStyle]}>
       {!isSad ? (
         <>
-          {!eq && (
-            <Image
-              source={baseImg}
-              style={styles.layer}
-              accessibilityLabel="Your pet"
-            />
-          )}
+          <Image
+            source={baseImg}
+            style={styles.layer}
+            accessibilityLabel="Your pet"
+          />
 
           {eq.shoes && (
             <Image source={findItemImg(eq.shoes)} style={styles.layer} />

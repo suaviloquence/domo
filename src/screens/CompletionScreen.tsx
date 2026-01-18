@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { usePet } from '../context/PetContext';
 import ReflectionModal from '../components/ReflectionModal';
@@ -138,12 +138,15 @@ export default function CompletionScreen({
 
   return (
     <View style={styles.container}>
+      {/* Food Icon Accent */}
+      <View style={styles.foodIconContainer}>
+        <Image source={require('../assets/food.png')} style={styles.foodIcon} />
+      </View>
+
       {/* Congratulatory Message */}
       <View style={styles.top}>
         <View style={styles.congratsContainer}>
-          <MaterialIcons name="celebration" size={28} color="#6FAF8A" />
-          <Text style={styles.congrats}>Congratulations!</Text>
-          <MaterialIcons name="celebration" size={28} color="#6FAF8A" />
+          <Text style={styles.congrats}>Great job!</Text>
         </View>
         <View style={styles.infoContainer}>
           <Text style={styles.infoText}>
@@ -158,13 +161,15 @@ export default function CompletionScreen({
         <Text style={styles.cardTitle}>Rewards</Text>
         <View style={styles.rewardRow}>
           <View style={styles.rewardIconContainer}>
-            <MaterialIcons name="restaurant" size={18} color="#3C5A49" />
+            <Image source={require('../assets/food.png')} style={styles.icons} />
+            {/* <MaterialIcons name="restaurant" size={16} color="#3C5A49" /> */}
           </View>
           <Text style={styles.cardText}>+{foodReward} Food</Text>
         </View>
         <View style={styles.rewardRow}>
           <View style={styles.rewardIconContainer}>
-            <MaterialIcons name="monetization-on" size={18} color="#3C5A49" />
+            <Image source={require('../assets/coin.png')} style={styles.icons} />
+            {/* <MaterialIcons name="monetization-on" size={16} color="#3C5A49" /> */}
           </View>
           <Text style={styles.cardText}>+{coinReward} Coins</Text>
         </View>
@@ -173,7 +178,7 @@ export default function CompletionScreen({
             <View style={[styles.rewardIconContainer, styles.streakIcon]}>
               <MaterialIcons
                 name="local-fire-department"
-                size={18}
+                size={16}
                 color="#FF6B35"
               />
             </View>
@@ -197,14 +202,14 @@ export default function CompletionScreen({
             {reflected ? (
               <MaterialIcons
                 name="check-circle"
-                size={18}
+                size={16}
                 color="white"
                 style={styles.checkIcon}
               />
             ) : (
               <MaterialIcons
                 name="edit"
-                size={18}
+                size={16}
                 color="white"
                 style={styles.checkIcon}
               />
@@ -223,7 +228,7 @@ export default function CompletionScreen({
         onPress={() => navigation.popToTop()}
         activeOpacity={0.8}
       >
-        <MaterialIcons name="home" size={20} color="white" />
+        <MaterialIcons name="home" size={18} color="#3C5A49" />
         <Text style={styles.homeButtonText}>Back to Home</Text>
       </TouchableOpacity>
 
@@ -241,24 +246,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6FAF7',
-    padding: 24,
-    justifyContent: 'space-between',
+    padding: 16,
+    // justifyContent: 'space-between',
+    gap: 16,
+    justifyContent: 'center',
+  },
+  foodIconContainer: {
+    alignSelf: 'center',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#E7F3EC',
+    borderWidth: 2,
+    borderColor: '#D4E5DA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#3C5A49',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  foodIcon: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
   },
   top: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 8,
   },
   congratsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   congrats: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '600',
     textAlign: 'center',
-    marginHorizontal: 10,
+    marginHorizontal: 8,
     color: '#3C5A49',
     letterSpacing: 0.5,
   },
@@ -266,51 +295,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#6B7D73',
     textAlign: 'center',
     letterSpacing: 0.2,
   },
   goalText: {
-    fontSize: 17,
+    fontSize: 16,
     color: '#3C5A49',
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: 3,
     letterSpacing: 0.2,
   },
   card: {
     backgroundColor: '#E7F3EC',
-    borderRadius: 18,
-    padding: 24,
+    borderRadius: 16,
+    margin: 20,
+    padding: 30,
     borderWidth: 1.5,
     borderColor: '#D4E5DA',
     shadowColor: '#3C5A49',
     shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: '#6B7D73',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   rewardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 6,
+    marginVertical: 3,
   },
   rewardIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     backgroundColor: '#F6FAF7',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
     borderWidth: 1,
     borderColor: '#D4E5DA',
   },
@@ -319,7 +349,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFE0D4',
   },
   cardText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
     color: '#3C5A49',
     letterSpacing: 0.2,
@@ -328,16 +358,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reflectionText: {
-    fontSize: 15,
-    marginBottom: 14,
+    fontSize: 14,
+    marginBottom: 10,
     textAlign: 'center',
     color: '#6B7D73',
     letterSpacing: 0.2,
   },
   reflectButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 14,
     backgroundColor: '#6FAF8A',
     borderWidth: 2,
     borderColor: '#5A9A75',
@@ -356,29 +386,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkIcon: {
-    marginRight: 6,
+    marginRight: 5,
   },
   reflectButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     letterSpacing: 0.3,
   },
   reflectButtonSubtext: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    marginLeft: 6,
+    marginLeft: 5,
   },
   homeButton: {
+    marginTop: 32,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: '#6FAF8A',
-    marginBottom: 24,
-    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 16,
+    gap: 6,
     borderWidth: 2,
     borderColor: '#5A9A75',
     shadowColor: '#3C5A49',
@@ -386,11 +416,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    width: '60%',
+    alignSelf: 'center',
   },
   homeButtonText: {
-    color: 'white',
-    fontSize: 16,
+    color: '#3C5A49',
+    fontSize: 15,
     fontWeight: '600',
     letterSpacing: 0.3,
+  },
+  icons: {
+    width: 16,
+    height: 16,
   },
 });

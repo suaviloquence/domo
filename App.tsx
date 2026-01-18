@@ -27,9 +27,7 @@ function RootNavigator() {
       screenOptions={{ headerShown: false }}
       initialRouteName={selectedPetId ? 'Home' : 'PickPet'}
     >
-      {!selectedPetId && (
-        <Stack.Screen name="PickPet" component={PickPetScreen} />
-      )}
+      <Stack.Screen name="PickPet" component={PickPetScreen} />
 
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Focus" component={FocusScreen} />
