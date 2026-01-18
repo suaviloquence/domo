@@ -231,7 +231,7 @@ export default function HomeScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
 
-          {__DEV__ && (
+          {false && __DEV__ && (
             <TouchableOpacity
               style={styles.devButton}
               onPress={() => setDevMenuVisible(true)}
