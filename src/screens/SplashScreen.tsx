@@ -14,7 +14,7 @@ export default function SplashScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <Image
-        source={require("../assets/miffy.gif")}
+        source={require("../assets/RUGY.png")}
         style={styles.avatar}
       />
       <Text style={styles.text}>Loading…</Text>
